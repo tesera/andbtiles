@@ -16,6 +16,13 @@ andbtiles is an Android application that manages local MBTiles caching and expos
 3. Mapbox Account
 4. AWS S3
 
+####Mapbox Integration
+By adding you Mapbox credential the app will fetch you maps from the Mapbox API and allow you to control how the maps will be cached.
+
+1. no-cache: app simply acts as a proxy.
+2. on-deman-cache: app only caches tiles that have been requested.
+3. full-cache: app will harvest tiles and cache them locally.
+
 #### Example Use Case:
 1. Leaflet.js/Mapbox request tiles via http.
 2. Angular custom http backend intercepts requests and uses custom angular service to request tile from Cordova Plugin.
