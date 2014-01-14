@@ -2,7 +2,26 @@
 <resources>
 
     <string name="app_name">andbtiles</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
+    <string name="placeholder">Placeholder</string>
+
+    <string name="action_add">Add Provider</string>
+    <string name="action_local">Local</string>
+    <string name="action_internet">From the Internet</string>
+    <string name="action_filter">Filter results…</string>
+
+    <string name="hint_no_maps">No saved maps.</string>
+    <string name="hint_no_maps_tap">Tap</string>
+    <string name="hint_no_maps_provider">to add a new provider.</string>
+    <string name="hint_searching_mbtiles">Searching for .mbtiles files…</string>
+    <string name="hint_no_results">No filter results.</string>
+
+    <string name="btn_browse">Browse…</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_confirm">Confirm</string>
+
+    <string name="crouton_invalid_file">Please select a valid .mbtiles file</string>
+
+    <string name="dialog_title_local_provider">Add Local Provider</string>
+    <string name="dialog_message_local_provider" formatted="false">Use %s as a local provider?</string>
 
 </resources>

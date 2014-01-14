@@ -1,0 +1,14 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.tesera.andbtiles.MainActivity">
+
+    <item
+        android:id="@+id/action_local"
+        android:title="@string/action_local"
+        android:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_internet"
+        android:title="@string/action_internet"
+        android:showAsAction="ifRoom" />
+</menu>

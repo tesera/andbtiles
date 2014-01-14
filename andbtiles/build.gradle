@@ -2,7 +2,7 @@ apply plugin: 'android'
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.1"
+    buildToolsVersion '19.0.1'
 
     defaultConfig {
         minSdkVersion 14
@@ -24,4 +24,7 @@ android {
 }
 
 dependencies {
+    compile 'commons-io:commons-io:2.4'
+    compile 'de.keyboardsurfer.android.widget:crouton:1.8.2'
+    compile 'com.google.code.gson:gson:2.2.4'
 }
