@@ -4,6 +4,9 @@ package com.tesera.andbtiles.utils;
 import android.content.Context;
 import android.os.Environment;
 
+import com.tesera.andbtiles.databases.MapsDatabase;
+import com.tesera.andbtiles.pojos.MapItem;
+
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -28,6 +31,19 @@ public class Utils {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public static boolean saveMapToDatabase(Context context, MapItem mapItem) {
+        MapsDatabase mapsDatabase = new MapsDatabase(context);
+        try {
+            mapsDatabase.open();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        mapsDatabase.insertItems(mapItem);
+        mapsDatabase.close();
+        return true;
     }
 
     public static String getStringFromPrefs(Context context, String key) {

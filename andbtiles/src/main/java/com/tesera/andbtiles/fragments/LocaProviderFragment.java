@@ -1,8 +1,7 @@
 package com.tesera.andbtiles.fragments;
 
-import android.app.AlertDialog;
+import android.app.Activity;
 import android.app.Fragment;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -14,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
@@ -22,6 +22,8 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.tesera.andbtiles.R;
 import com.tesera.andbtiles.adapters.MBTilesAdapter;
+import com.tesera.andbtiles.callbacks.DatabaseChangeCallback;
+import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.utils.Consts;
 import com.tesera.andbtiles.utils.Utils;
 
@@ -36,9 +38,17 @@ public class LocaProviderFragment extends Fragment {
 
     private ListView mMBTilesList;
     private TextView mEmptyView;
+    private TextView mName;
     private Menu mMenu;
 
-    private String mMBTilesFilePath;
+    private File mMBTilesFile;
+    private DatabaseChangeCallback mCallback;
+
+    @Override
+    public void onAttach(Activity activity) {
+        mCallback = (DatabaseChangeCallback) activity;
+        super.onAttach(activity);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -56,11 +66,15 @@ public class LocaProviderFragment extends Fragment {
         mMBTilesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                mMBTilesFilePath = ((File) parent.getAdapter().getItem(position)).getAbsolutePath();
+                mMBTilesFile = (File) parent.getAdapter().getItem(position);
+                mName.setText(mMBTilesFile.getName());
+
+                mMBTilesList.setItemChecked(position, true);
                 selectFile();
             }
         });
         mEmptyView = (TextView) contentView.findViewById(android.R.id.empty);
+        mName = (TextView) contentView.findViewById(R.id.txt_name);
         Button mBrowse = (Button) contentView.findViewById(R.id.btn_browse);
         mBrowse.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -75,9 +89,19 @@ public class LocaProviderFragment extends Fragment {
     }
 
     @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        // search for .mbtiles files on the external storage
+        ListFilesByExtensionTask task = new ListFilesByExtensionTask();
+        task.execute(Consts.EXTENSION_MBTILES);
+        super.onViewCreated(view, savedInstanceState);
+    }
+
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.search, menu);
+        // save the menu as a class variable since we toggle the menu visibility often
         mMenu = menu;
+        // setup the search view
         SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
         searchView.setQueryHint(getString(R.string.action_filter));
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -89,17 +113,14 @@ public class LocaProviderFragment extends Fragment {
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                if (mMBTilesList != null)
+                // filter results only if we have an adapter
+                if (mMBTilesList != null
+                        || mMBTilesList.getAdapter() != null
+                        || ((MBTilesAdapter) mMBTilesList.getAdapter()).getFilter() != null)
                     ((MBTilesAdapter) mMBTilesList.getAdapter()).getFilter().filter(newText);
                 return false;
             }
         });
-        menu.findItem(R.id.action_search).setVisible(false);
-
-        // list all .mbtiles file on SD
-        // we call this here, because the task toggles the menu visibility
-        ListFilesByExtensionTask task = new ListFilesByExtensionTask();
-        task.execute(Consts.EXTENSION_MBTILES);
     }
 
     @Override
@@ -122,29 +143,83 @@ public class LocaProviderFragment extends Fragment {
         if (requestCode != Consts.RESULT_PICK_FILE || data == null || data.getDataString() == null)
             return;
 
-        mMBTilesFilePath = data.getDataString();
+        // get the file from data string URI and extract the file name from it
+        mMBTilesFile = new File(data.getDataString());
+        mName.setText(mMBTilesFile.getName());
+
         selectFile();
         super.onActivityResult(requestCode, resultCode, data);
     }
 
     private void selectFile() {
-        if (mMBTilesFilePath == null)
+        if (mMBTilesFile == null)
             return;
-        if (!mMBTilesFilePath.endsWith(Consts.EXTENSION_MBTILES)) {
+        if (!mMBTilesFile.getName().endsWith(Consts.EXTENSION_MBTILES)) {
             Crouton.makeText(getActivity(), getString(R.string.crouton_invalid_file), Style.ALERT).show();
             return;
         }
-        new AlertDialog.Builder(getActivity())
-                .setTitle(getString(R.string.dialog_title_local_provider))
-                .setMessage(String.format(getString(R.string.dialog_message_local_provider), mMBTilesFilePath))
-                .setNegativeButton(getString(R.string.btn_cancel), null)
-                .setPositiveButton(getString(R.string.btn_confirm), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // TODO select cache method
-                    }
-                })
-                .show();
+
+        View actionBarButtons = getActivity().getLayoutInflater().inflate(R.layout.action_bar_custom, new LinearLayout(getActivity()), false);
+
+        View cancelActionView = actionBarButtons.findViewById(R.id.action_cancel);
+        cancelActionView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                unselectFile();
+            }
+        });
+
+        View doneActionView = actionBarButtons.findViewById(R.id.action_done);
+        doneActionView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // create new map item
+                MapItem mapItem = new MapItem();
+                mapItem.setPath(mMBTilesFile.getAbsolutePath());
+                mapItem.setName(mMBTilesFile.getName());
+                mapItem.setId(mMBTilesFile.getName().split("\\.")[0]);
+                mapItem.setCacheMode(Consts.CACHE_FULL);
+
+                // try to save it to database
+                if (!Utils.saveMapToDatabase(getActivity(), mapItem)) {
+                    unselectFile();
+                    Crouton.makeText(getActivity(), getString(R.string.crouton_database_error), Style.ALERT).show();
+                    return;
+                }
+                // return to previous screen, notify dataSetChanged and inform the user
+                unselectFile();
+                Crouton.makeText(getActivity(), getString(R.string.crouton_map_added), Style.INFO).show();
+                mCallback.onDatabaseChanged();
+                getFragmentManager().popBackStack();
+            }
+        });
+
+        // prepare the action bar for custom view
+        getActivity().getActionBar().setHomeButtonEnabled(false);
+        getActivity().getActionBar().setDisplayShowHomeEnabled(false);
+        getActivity().getActionBar().setDisplayHomeAsUpEnabled(false);
+        getActivity().getActionBar().setDisplayShowTitleEnabled(false);
+
+        getActivity().getActionBar().setDisplayShowCustomEnabled(true);
+        getActivity().getActionBar().setCustomView(actionBarButtons);
+        // hide the filter icon
+        mMenu.setGroupVisible(R.id.group_search, false);
+    }
+
+    private void unselectFile() {
+        // return to normal action bar state
+        getActivity().getActionBar().setHomeButtonEnabled(true);
+        getActivity().getActionBar().setDisplayShowHomeEnabled(true);
+        getActivity().getActionBar().setDisplayHomeAsUpEnabled(true);
+        getActivity().getActionBar().setDisplayShowTitleEnabled(true);
+
+        getActivity().getActionBar().setDisplayShowCustomEnabled(false);
+        getActivity().getActionBar().setCustomView(null);
+
+        // un-select any selected files
+        mMenu.setGroupVisible(R.id.group_search, true);
+        mMBTilesList.setItemChecked(mMBTilesList.getCheckedItemPosition(), false);
+        mName.setText(R.string.hint_no_file_selected);
     }
 
     private class ListFilesByExtensionTask extends AsyncTask<String, Void, List<File>> {
@@ -164,8 +239,6 @@ public class LocaProviderFragment extends Fragment {
             // set the adapter
             MBTilesAdapter adapter = new MBTilesAdapter(getActivity(), files);
             mMBTilesList.setAdapter(adapter);
-            // enable results filtering
-            mMenu.findItem(R.id.action_search).setVisible(true);
             // we already have an adapter
             // empty list in this case would mean no filter results
             mEmptyView.setText(getString(R.string.hint_no_results));
@@ -187,8 +260,6 @@ public class LocaProviderFragment extends Fragment {
             }
             MBTilesAdapter adapter = new MBTilesAdapter(getActivity(), files);
             mMBTilesList.setAdapter(adapter);
-            // enable results filtering
-            mMenu.findItem(R.id.action_search).setVisible(true);
             // we already have an adapter
             // empty list in this case would mean no filter results
             mEmptyView.setText(getString(R.string.hint_no_results));

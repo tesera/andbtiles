@@ -14,6 +14,11 @@
     <string name="hint_no_maps_provider">to add a new provider.</string>
     <string name="hint_searching_mbtiles">Searching for .mbtiles files…</string>
     <string name="hint_no_results">No filter results.</string>
+    <string name="hint_no_file_selected">No file selected</string>
+    <string name="hint_no_cache">No Cache</string>
+    <string name="hint_on_demand">On Demand</string>
+    <string name="hint_cache">Cache</string>
+    <string name="hint_data_only">Data Only</string>
 
     <string name="btn_browse">Browse…</string>
     <string name="btn_cancel">Cancel</string>
@@ -23,5 +28,8 @@
 
     <string name="dialog_title_local_provider">Add Local Provider</string>
     <string name="dialog_message_local_provider" formatted="false">Use %s as a local provider?</string>
+    <string name="hint_browse_list">or select one from the list:</string>
+    <string name="crouton_database_error">Cannot save map, please select another file and try again.</string>
+    <string name="crouton_map_added">Map successfully added</string>
 
 </resources>

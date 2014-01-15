@@ -3,6 +3,7 @@ package com.tesera.andbtiles.fragments;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.app.LoaderManager;
+import android.content.Intent;
 import android.content.Loader;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -15,10 +16,13 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 
+import com.tesera.andbtiles.MainActivity;
+import com.tesera.andbtiles.MapActivity;
 import com.tesera.andbtiles.R;
 import com.tesera.andbtiles.adapters.MapsAdapter;
 import com.tesera.andbtiles.loaders.MapsDatabaseLoader;
 import com.tesera.andbtiles.pojos.MapItem;
+import com.tesera.andbtiles.utils.Consts;
 
 import java.util.List;
 
@@ -42,10 +46,14 @@ public class MapsFragment extends Fragment implements LoaderManager.LoaderCallba
         mMapsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // TODO open map settings
+                MapItem mapItem = (MapItem) parent.getAdapter().getItem(position);
+
+                Intent mapIntent = new Intent(getActivity(), MapActivity.class);
+                mapIntent.putExtra(Consts.EXTRA_PATH, mapItem.getPath());
+                startActivity(mapIntent);
             }
         });
-        mEmptyView = contentView.findViewById(android.R.id.empty);
+        mMapsList.setEmptyView(contentView.findViewById(android.R.id.empty));
         return contentView;
     }
 
@@ -54,6 +62,18 @@ public class MapsFragment extends Fragment implements LoaderManager.LoaderCallba
         super.onViewCreated(view, savedInstanceState);
         // init the database loader
         getLoaderManager().initLoader(0, null, this);
+    }
+
+    @Override
+    public void onResume() {
+        MainActivity activity = (MainActivity) getActivity();
+
+        // reload data if database has changed
+        if (activity.isDatabaseChanged()) {
+            getLoaderManager().restartLoader(0, null, this);
+            activity.setDatabaseChanged(false);
+        }
+        super.onResume();
     }
 
     @Override
@@ -113,7 +133,7 @@ public class MapsFragment extends Fragment implements LoaderManager.LoaderCallba
             return;
         // set empty view if there are no saved maps
         if (data == null || data.isEmpty()) {
-            mMapsList.setEmptyView(mEmptyView);
+
             return;
         }
         mMapsList.setAdapter(new MapsAdapter(getActivity(), data));

@@ -41,7 +41,7 @@ public class MapsDatabase {
             database.delete(MapsDatabaseHelper.TABLE_MAPS, MapsDatabaseHelper.COLUMN_ID + "=" + item.getId(), null);
     }
 
-    public void insertItems(List<MapItem> items) {
+    public void insertItems(MapItem... items) {
         String sql = "INSERT INTO " + MapsDatabaseHelper.TABLE_MAPS + " VALUES (?,?,?,?);";
         SQLiteStatement statement = database.compileStatement(sql);
         database.beginTransaction();
@@ -85,7 +85,7 @@ public class MapsDatabase {
         mapItem.setId(cursor.getString(0));
         mapItem.setName(cursor.getString(1));
         mapItem.setPath(cursor.getString(2));
-        mapItem.setCacheMode(cursor.getInt(4));
+        mapItem.setCacheMode(cursor.getInt(3));
         return mapItem;
     }
 }

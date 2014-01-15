@@ -5,6 +5,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="@string/hint_no_file_selected"
+        android:id="@+id/txt_name"
+        android:layout_gravity="center_horizontal" />
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -16,19 +24,18 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/placeholder"
-        android:id="@+id/txt_path"
-        android:layout_gravity="center_horizontal"
-        android:visibility="invisible" />
+        android:text="@string/hint_browse_list"
+        android:layout_gravity="center_horizontal" />
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <ListView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@android:id/list" />
+            android:id="@android:id/list"
+            android:choiceMode="singleChoice"/>
 
         <TextView
             android:orientation="vertical"
@@ -36,6 +43,6 @@
             android:layout_height="match_parent"
             android:id="@android:id/empty"
             android:gravity="center"
-            android:text="@string/hint_searching_mbtiles"/>
+            android:text="@string/hint_searching_mbtiles" />
     </FrameLayout>
 </LinearLayout>
