@@ -18,4 +18,6 @@ public class Consts {
     public static final int CACHE_DATA = 4;
     // extras
     public static final String EXTRA_PATH = "extra_path";
+    // tiles
+    public static final int TILE_SIZE = 256;
 }

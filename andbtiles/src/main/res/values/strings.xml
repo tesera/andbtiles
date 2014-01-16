@@ -25,11 +25,11 @@
     <string name="btn_confirm">Confirm</string>
 
     <string name="crouton_invalid_file">Please select a valid .mbtiles file</string>
+    <string name="crouton_database_error">Cannot save map, please select another file and try again.</string>
+    <string name="crouton_map_added">Map successfully added</string>
 
     <string name="dialog_title_local_provider">Add Local Provider</string>
     <string name="dialog_message_local_provider" formatted="false">Use %s as a local provider?</string>
     <string name="hint_browse_list">or select one from the list:</string>
-    <string name="crouton_database_error">Cannot save map, please select another file and try again.</string>
-    <string name="crouton_map_added">Map successfully added</string>
 
 </resources>
