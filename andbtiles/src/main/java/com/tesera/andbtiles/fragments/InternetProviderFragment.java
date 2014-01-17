@@ -69,10 +69,9 @@ public class InternetProviderFragment extends Fragment {
         mMBTilesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if(mTileJsonList == null || mTileJsonList.size() == 0) {
+                if (mTileJsonList == null || mTileJsonList.size() == 0) {
                     // TODO this is an .mbtiles file so prompt user for download confirmation
-                }
-                else {
+                } else {
                     // TODO this is a map from TileJSON so advance to cache options screen
                 }
             }
@@ -208,7 +207,8 @@ public class InternetProviderFragment extends Fragment {
                     MapItem mapItem = new MapItem();
                     mapItem.setName(tileJson.getName());
                     mapItem.setPath(tileJson.getDownload());
-                    mapItem.setSize(getFileSize(tileJson.getDownload()));
+                    if (tileJson.getFilesize() != null)
+                        mapItem.setSize(tileJson.getFilesize().longValue());
                     adapterList.add(mapItem);
                 }
                 return adapterList;
