@@ -7,6 +7,7 @@ public class MapItem {
     private String path;
     private String name;
     private int cacheMode;
+    private long size;
 
     public String getId() {
         return id;
@@ -39,4 +40,13 @@ public class MapItem {
     public void setCacheMode(int cacheMode) {
         this.cacheMode = cacheMode;
     }
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
 }

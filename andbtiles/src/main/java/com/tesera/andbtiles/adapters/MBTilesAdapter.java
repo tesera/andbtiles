@@ -1,6 +1,7 @@
 package com.tesera.andbtiles.adapters;
 
 import android.content.Context;
+import android.text.format.Formatter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +11,7 @@ import android.widget.Filterable;
 import android.widget.TextView;
 
 import com.tesera.andbtiles.R;
+import com.tesera.andbtiles.utils.Consts;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -56,10 +58,10 @@ public class MBTilesAdapter extends BaseAdapter implements Filterable {
         }
 
         ViewHolder holder = (ViewHolder) convertView.getTag();
-        File map = mFiles.get(position);
+        File file = mFiles.get(position);
 
-        holder.name.setText(map.getName());
-        holder.path.setText(map.getAbsolutePath());
+        holder.name.setText(file.getName().replace("." + Consts.EXTENSION_MBTILES, ""));
+        holder.path.setText(file.getAbsolutePath() + "\n" + Formatter.formatFileSize(mContext, file.length()));
 
         return convertView;
     }
@@ -96,9 +98,9 @@ public class MBTilesAdapter extends BaseAdapter implements Filterable {
                     return mFiles;
                 }
 
-                for (File mall : mFilesOriginal) {
-                    if (mall.getName().toLowerCase().contains(constraint.toString().toLowerCase()))
-                        filteredList.add(mall);
+                for (File file : mFilesOriginal) {
+                    if (file.getName().toLowerCase().contains(constraint.toString().toLowerCase()))
+                        filteredList.add(file);
                 }
                 return filteredList;
             }

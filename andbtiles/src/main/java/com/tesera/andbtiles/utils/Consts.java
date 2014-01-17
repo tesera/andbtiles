@@ -6,6 +6,7 @@ public class Consts {
     // file management
     public static final String FOLDER_ROOT = "andtbiles";
     public static final String EXTENSION_MBTILES = "mbtiles";
+    public static final String EXTENSION_JSON = "json";
     // results
     public static final int RESULT_PICK_FILE = 100;
     // preferences
@@ -18,6 +19,7 @@ public class Consts {
     public static final int CACHE_DATA = 4;
     // extras
     public static final String EXTRA_PATH = "extra_path";
+    public static final String EXTRA_NAME = "extra_name";
     // tiles
     public static final int TILE_SIZE = 256;
 }

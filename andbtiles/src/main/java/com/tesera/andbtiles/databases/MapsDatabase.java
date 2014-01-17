@@ -21,7 +21,8 @@ public class MapsDatabase {
             MapsDatabaseHelper.COLUMN_ID,
             MapsDatabaseHelper.COLUMN_NAME,
             MapsDatabaseHelper.COLUMN_PATH,
-            MapsDatabaseHelper.COLUMN_CACHE_MODE
+            MapsDatabaseHelper.COLUMN_CACHE_MODE,
+            MapsDatabaseHelper.COLUMN_SIZE
     };
 
     public MapsDatabase(Context context) {
@@ -42,7 +43,7 @@ public class MapsDatabase {
     }
 
     public void insertItems(MapItem... items) {
-        String sql = "INSERT INTO " + MapsDatabaseHelper.TABLE_MAPS + " VALUES (?,?,?,?);";
+        String sql = "INSERT INTO " + MapsDatabaseHelper.TABLE_MAPS + " VALUES (?,?,?,?,?);";
         SQLiteStatement statement = database.compileStatement(sql);
         database.beginTransaction();
         for (MapItem item : items) {
@@ -51,6 +52,7 @@ public class MapsDatabase {
             statement.bindString(2, item.getName());
             statement.bindString(3, item.getPath());
             statement.bindLong(4, item.getCacheMode());
+            statement.bindLong(5, item.getSize());
             statement.execute();
         }
         database.setTransactionSuccessful();
@@ -63,6 +65,7 @@ public class MapsDatabase {
         args.put(MapsDatabaseHelper.COLUMN_NAME, item.getName());
         args.put(MapsDatabaseHelper.COLUMN_PATH, item.getPath());
         args.put(MapsDatabaseHelper.COLUMN_CACHE_MODE, item.getCacheMode());
+        args.put(MapsDatabaseHelper.COLUMN_SIZE, item.getSize());
         database.update(MapsDatabaseHelper.TABLE_MAPS, args, MapsDatabaseHelper.COLUMN_ID + "=" + item.getId(), null);
     }
 
@@ -86,6 +89,7 @@ public class MapsDatabase {
         mapItem.setName(cursor.getString(1));
         mapItem.setPath(cursor.getString(2));
         mapItem.setCacheMode(cursor.getInt(3));
+        mapItem.setSize(cursor.getLong(4));
         return mapItem;
     }
 }

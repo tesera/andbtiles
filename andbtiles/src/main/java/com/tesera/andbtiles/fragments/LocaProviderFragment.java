@@ -97,6 +97,12 @@ public class LocaProviderFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        getActivity().getActionBar().setTitle(getString(R.string.title_local_provider));
+        super.onResume();
+    }
+
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.search, menu);
         // save the menu as a class variable since we toggle the menu visibility often
@@ -177,8 +183,9 @@ public class LocaProviderFragment extends Fragment {
                 MapItem mapItem = new MapItem();
                 mapItem.setPath(mMBTilesFile.getAbsolutePath());
                 mapItem.setName(mMBTilesFile.getName());
-                mapItem.setId(mMBTilesFile.getName().split("\\.")[0]);
+                mapItem.setId(mMBTilesFile.getName().replace("." + Consts.EXTENSION_MBTILES, ""));
                 mapItem.setCacheMode(Consts.CACHE_FULL);
+                mapItem.setSize(mMBTilesFile.length());
 
                 // try to save it to database
                 if (!Utils.saveMapToDatabase(getActivity(), mapItem)) {

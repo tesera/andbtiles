@@ -29,7 +29,6 @@ import java.util.List;
 public class MapsFragment extends Fragment implements LoaderManager.LoaderCallbacks<List<MapItem>> {
 
     private ListView mMapsList;
-    private View mEmptyView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -50,6 +49,7 @@ public class MapsFragment extends Fragment implements LoaderManager.LoaderCallba
 
                 Intent mapIntent = new Intent(getActivity(), MapActivity.class);
                 mapIntent.putExtra(Consts.EXTRA_PATH, mapItem.getPath());
+                mapIntent.putExtra(Consts.EXTRA_NAME, mapItem.getName());
                 startActivity(mapIntent);
             }
         });
@@ -66,9 +66,11 @@ public class MapsFragment extends Fragment implements LoaderManager.LoaderCallba
 
     @Override
     public void onResume() {
-        MainActivity activity = (MainActivity) getActivity();
+        // set action bar title
+        getActivity().getActionBar().setTitle(getString(R.string.app_name));
 
         // reload data if database has changed
+        MainActivity activity = (MainActivity) getActivity();
         if (activity.isDatabaseChanged()) {
             getLoaderManager().restartLoader(0, null, this);
             activity.setDatabaseChanged(false);
@@ -103,7 +105,7 @@ public class MapsFragment extends Fragment implements LoaderManager.LoaderCallba
                                 fragment = new LocaProviderFragment();
                                 break;
                             case R.id.action_internet:
-                                // TODO add internet provider fragment
+                                fragment = new InternetProviderFragment();
                                 break;
                         }
                         if (fragment != null)

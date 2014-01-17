@@ -36,6 +36,9 @@ public class MapActivity extends Activity {
             return;
         }
 
+        // set the action bar title
+        getActionBar().setTitle(getIntent().getStringExtra(Consts.EXTRA_NAME).replace("." + Consts.EXTENSION_MBTILES, ""));
+
         mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
         mMap.setMapType(GoogleMap.MAP_TYPE_NONE);
 
