@@ -29,6 +29,8 @@ import com.tesera.andbtiles.utils.Utils;
 
 import java.io.File;
 import java.lang.reflect.Type;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import de.keyboardsurfer.android.widget.crouton.Crouton;
@@ -150,7 +152,12 @@ public class LocaProviderFragment extends Fragment {
             return;
 
         // get the file from data string URI and extract the file name from it
-        mMBTilesFile = new File(data.getDataString());
+        try {
+            mMBTilesFile = new File(new URI(data.getDataString()).getPath());
+        } catch (URISyntaxException e) {
+            Crouton.makeText(getActivity(), getString(R.string.crouton_invalid_file), Style.ALERT).show();
+            return;
+        }
         mName.setText(mMBTilesFile.getName());
 
         selectFile();
@@ -165,7 +172,7 @@ public class LocaProviderFragment extends Fragment {
             return;
         }
 
-        View actionBarButtons = getActivity().getLayoutInflater().inflate(R.layout.action_bar_custom, new LinearLayout(getActivity()), false);
+        View actionBarButtons = getActivity().getLayoutInflater().inflate(R.layout.action_bar_custom_confirm, new LinearLayout(getActivity()), false);
 
         View cancelActionView = actionBarButtons.findViewById(R.id.action_cancel);
         cancelActionView.setOnClickListener(new View.OnClickListener() {
@@ -183,9 +190,15 @@ public class LocaProviderFragment extends Fragment {
                 MapItem mapItem = new MapItem();
                 mapItem.setPath(mMBTilesFile.getAbsolutePath());
                 mapItem.setName(mMBTilesFile.getName());
-                mapItem.setId(mMBTilesFile.getName().replace("." + Consts.EXTENSION_MBTILES, ""));
                 mapItem.setCacheMode(Consts.CACHE_FULL);
                 mapItem.setSize(mMBTilesFile.length());
+
+                // check if the map is already added
+                if (Utils.isMapInDatabase(getActivity(), mapItem)) {
+                    Crouton.makeText(getActivity(), getString(R.string.crouton_map_exsists), Style.INFO).show();
+                    unselectFile();
+                    return;
+                }
 
                 // try to save it to database
                 if (!Utils.saveMapToDatabase(getActivity(), mapItem)) {

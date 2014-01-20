@@ -6,6 +6,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
+import android.net.Uri;
 
 import com.tesera.andbtiles.pojos.MapItem;
 
@@ -38,8 +39,8 @@ public class MapsDatabase {
     }
 
     public void deleteItems(List<MapItem> items) {
-        for(MapItem item : items)
-            database.delete(MapsDatabaseHelper.TABLE_MAPS, MapsDatabaseHelper.COLUMN_ID + "=" + item.getId(), null);
+        for (MapItem item : items)
+            database.delete(MapsDatabaseHelper.TABLE_MAPS, MapsDatabaseHelper.COLUMN_PATH + " like '" + item.getPath() + "'", null);
     }
 
     public void insertItems(MapItem... items) {
@@ -48,7 +49,6 @@ public class MapsDatabase {
         database.beginTransaction();
         for (MapItem item : items) {
             statement.clearBindings();
-            statement.bindString(1, item.getId());
             statement.bindString(2, item.getName());
             statement.bindString(3, item.getPath());
             statement.bindLong(4, item.getCacheMode());
@@ -61,12 +61,11 @@ public class MapsDatabase {
 
     public void updateItem(MapItem item) {
         ContentValues args = new ContentValues();
-        args.put(MapsDatabaseHelper.COLUMN_ID, item.getId());
         args.put(MapsDatabaseHelper.COLUMN_NAME, item.getName());
         args.put(MapsDatabaseHelper.COLUMN_PATH, item.getPath());
         args.put(MapsDatabaseHelper.COLUMN_CACHE_MODE, item.getCacheMode());
         args.put(MapsDatabaseHelper.COLUMN_SIZE, item.getSize());
-        database.update(MapsDatabaseHelper.TABLE_MAPS, args, MapsDatabaseHelper.COLUMN_ID + "=" + item.getId(), null);
+        database.update(MapsDatabaseHelper.TABLE_MAPS, args, MapsDatabaseHelper.COLUMN_PATH + " like '" + item.getPath() + "'", null);
     }
 
     public List<MapItem> getAllItems() {
@@ -83,9 +82,25 @@ public class MapsDatabase {
         return comments;
     }
 
+    public boolean isMapAdded(MapItem item) {
+        Cursor cursor = database.query(MapsDatabaseHelper.TABLE_MAPS, allColumns, MapsDatabaseHelper.COLUMN_PATH + " like '" + item.getPath() + "'", null, null, null, null);
+        boolean isAdded = cursor.moveToFirst();
+        cursor.close();
+        return isAdded;
+    }
+
+    public MapItem findMapByDatabaseName(String databaseName) {
+        Cursor cursor = database.query(MapsDatabaseHelper.TABLE_MAPS, allColumns,
+                MapsDatabaseHelper.COLUMN_NAME + " like '" + databaseName + "'", null, null, null, null);
+        MapItem mapItem = null;
+        if (cursor.moveToNext())
+            mapItem = cursorToMapItem(cursor);
+        cursor.close();
+        return mapItem;
+    }
+
     private MapItem cursorToMapItem(Cursor cursor) {
         MapItem mapItem = new MapItem();
-        mapItem.setId(cursor.getString(0));
         mapItem.setName(cursor.getString(1));
         mapItem.setPath(cursor.getString(2));
         mapItem.setCacheMode(cursor.getInt(3));

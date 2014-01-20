@@ -20,9 +20,9 @@ public class MapsDatabaseHelper extends SQLiteOpenHelper {
 
     // Database creation statement
     private static final String DATABASE_CREATE = "create table " + TABLE_MAPS + "(" +
-            COLUMN_ID + " text primary key, " +
+            COLUMN_ID + " integer primary key autoincrement, " +
             COLUMN_NAME + " text, " +
-            COLUMN_PATH + " text, " +
+            COLUMN_PATH + " text unique not null, " +
             COLUMN_CACHE_MODE + " integer, " +
             COLUMN_SIZE + " integer);";
 

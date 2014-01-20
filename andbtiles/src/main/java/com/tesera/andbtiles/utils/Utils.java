@@ -46,6 +46,19 @@ public class Utils {
         return true;
     }
 
+    public static boolean isMapInDatabase(Context context, MapItem mapItem) {
+        MapsDatabase mapsDatabase = new MapsDatabase(context);
+        try {
+            mapsDatabase.open();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        boolean result = mapsDatabase.isMapAdded(mapItem);
+        mapsDatabase.close();
+        return result;
+    }
+
     public static String getStringFromPrefs(Context context, String key) {
         return context.getSharedPreferences(Consts.PREF_NAME, Context.MODE_PRIVATE).getString(key, null);
     }
