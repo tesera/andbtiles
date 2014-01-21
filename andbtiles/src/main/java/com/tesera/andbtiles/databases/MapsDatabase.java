@@ -6,8 +6,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
-import android.net.Uri;
 
+import com.google.gson.Gson;
 import com.tesera.andbtiles.pojos.MapItem;
 
 import java.sql.SQLException;
@@ -23,7 +23,8 @@ public class MapsDatabase {
             MapsDatabaseHelper.COLUMN_NAME,
             MapsDatabaseHelper.COLUMN_PATH,
             MapsDatabaseHelper.COLUMN_CACHE_MODE,
-            MapsDatabaseHelper.COLUMN_SIZE
+            MapsDatabaseHelper.COLUMN_SIZE,
+            MapsDatabaseHelper.COLUMN_JSON_DATA
     };
 
     public MapsDatabase(Context context) {
@@ -44,15 +45,16 @@ public class MapsDatabase {
     }
 
     public void insertItems(MapItem... items) {
-        String sql = "INSERT INTO " + MapsDatabaseHelper.TABLE_MAPS + " VALUES (?,?,?,?,?);";
+        String sql = "INSERT INTO " + MapsDatabaseHelper.TABLE_MAPS + " VALUES (?,?,?,?,?,?);";
         SQLiteStatement statement = database.compileStatement(sql);
         database.beginTransaction();
         for (MapItem item : items) {
             statement.clearBindings();
             statement.bindString(2, item.getName());
-            statement.bindString(3, item.getPath());
+            statement.bindString(3, item.getPath() == null ? "" : item.getPath());
             statement.bindLong(4, item.getCacheMode());
             statement.bindLong(5, item.getSize());
+            statement.bindString(6, item.getJsonData() == null ? "" : item.getJsonData());
             statement.execute();
         }
         database.setTransactionSuccessful();
@@ -65,6 +67,7 @@ public class MapsDatabase {
         args.put(MapsDatabaseHelper.COLUMN_PATH, item.getPath());
         args.put(MapsDatabaseHelper.COLUMN_CACHE_MODE, item.getCacheMode());
         args.put(MapsDatabaseHelper.COLUMN_SIZE, item.getSize());
+        args.put(MapsDatabaseHelper.COLUMN_JSON_DATA, item.getJsonData());
         database.update(MapsDatabaseHelper.TABLE_MAPS, args, MapsDatabaseHelper.COLUMN_PATH + " like '" + item.getPath() + "'", null);
     }
 
@@ -83,7 +86,8 @@ public class MapsDatabase {
     }
 
     public boolean isMapAdded(MapItem item) {
-        Cursor cursor = database.query(MapsDatabaseHelper.TABLE_MAPS, allColumns, MapsDatabaseHelper.COLUMN_PATH + " like '" + item.getPath() + "'", null, null, null, null);
+        Cursor cursor = database.query(MapsDatabaseHelper.TABLE_MAPS, allColumns,
+                MapsDatabaseHelper.COLUMN_PATH + " like '" + item.getPath() + "'", null, null, null, null);
         boolean isAdded = cursor.moveToFirst();
         cursor.close();
         return isAdded;
@@ -101,10 +105,11 @@ public class MapsDatabase {
 
     private MapItem cursorToMapItem(Cursor cursor) {
         MapItem mapItem = new MapItem();
-        mapItem.setName(cursor.getString(1));
-        mapItem.setPath(cursor.getString(2));
-        mapItem.setCacheMode(cursor.getInt(3));
-        mapItem.setSize(cursor.getLong(4));
+        mapItem.setName(cursor.getString(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_NAME)));
+        mapItem.setPath(cursor.getString(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_PATH)));
+        mapItem.setCacheMode(cursor.getInt(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_CACHE_MODE)));
+        mapItem.setSize(cursor.getLong(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_SIZE)));
+        mapItem.setJsonData(cursor.getString(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_JSON_DATA)));
         return mapItem;
     }
 }

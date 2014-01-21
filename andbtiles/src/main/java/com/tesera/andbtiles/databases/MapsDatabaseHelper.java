@@ -17,14 +17,16 @@ public class MapsDatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_PATH = "path";
     public static final String COLUMN_CACHE_MODE = "cache_mode";
     public static final String COLUMN_SIZE = "size";
+    public static final String COLUMN_JSON_DATA = "json_data";
 
     // Database creation statement
     private static final String DATABASE_CREATE = "create table " + TABLE_MAPS + "(" +
             COLUMN_ID + " integer primary key autoincrement, " +
             COLUMN_NAME + " text, " +
-            COLUMN_PATH + " text unique not null, " +
+            COLUMN_PATH + " text, " +
             COLUMN_CACHE_MODE + " integer, " +
-            COLUMN_SIZE + " integer);";
+            COLUMN_SIZE + " integer, " +
+            COLUMN_JSON_DATA + " text);";
 
     public MapsDatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);

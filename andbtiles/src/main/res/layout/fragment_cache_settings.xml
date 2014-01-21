@@ -6,31 +6,44 @@
     android:gravity="center"
     android:orientation="vertical">
 
+    <TextView
+        android:id="@+id/txt_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:padding="@dimen/paddding_standard"
+        android:text="Medium Text"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
     <RadioGroup
-        android:id="@+id/radio_options"
+        android:id="@+id/radio_cache"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="@dimen/paddding_standard">
 
         <RadioButton
+            android:id="@+id/radio_cache_no"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/paddding_standard"
             android:text="@string/hint_no_cache" />
 
         <RadioButton
+            android:id="@+id/radio_cache_on_demand"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/paddding_standard"
             android:text="@string/hint_on_demand" />
 
         <RadioButton
+            android:id="@+id/radio_cache_full"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/paddding_standard"
             android:text="@string/hint_cache" />
 
         <RadioButton
+            android:id="@+id/radio_cache_data"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/paddding_standard"

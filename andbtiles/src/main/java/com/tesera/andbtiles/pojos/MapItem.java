@@ -7,6 +7,7 @@ public class MapItem {
     private String name;
     private int cacheMode;
     private long size;
+    private String jsonData;
 
     public String getPath() {
         return path;
@@ -40,4 +41,11 @@ public class MapItem {
         this.size = size;
     }
 
+    public String getJsonData() {
+        return jsonData;
+    }
+
+    public void setJsonData(String jsonData) {
+        this.jsonData = jsonData;
+    }
 }

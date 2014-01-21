@@ -3,6 +3,7 @@ package com.tesera.andbtiles.loaders;
 
 import android.content.AsyncTaskLoader;
 import android.content.Context;
+import android.util.Patterns;
 
 import com.tesera.andbtiles.databases.MapsDatabase;
 import com.tesera.andbtiles.pojos.MapItem;
@@ -48,7 +49,13 @@ public class MapsDatabaseLoader extends AsyncTaskLoader<List<MapItem>> {
         // check if file is still on the specified path
         List<MapItem> itemsForDeletion = new ArrayList<>();
         for (MapItem item : mapsList) {
-            // TODO check for HTTP provider
+            // skip if
+            // no or empty path - no private tiles data
+            // web URL path - not a local file
+            if(item.getPath() == null || item.getPath().isEmpty() || item.getPath().matches(Patterns.WEB_URL.pattern()))
+                continue;
+
+            // check if the local file is in storage
             File mbTileFile = new File(item.getPath());
             if (!mbTileFile.exists())
                 itemsForDeletion.add(item);

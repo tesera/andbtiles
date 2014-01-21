@@ -4,6 +4,7 @@ package com.tesera.andbtiles.fragments;
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.app.Fragment;
+import android.app.FragmentTransaction;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -72,7 +73,6 @@ public class InternetProviderFragment extends Fragment {
     private ListView mMBTilesList;
     private Menu mMenu;
 
-    private ArrayList<TileJson> mTileJsonList;
     private String mDownloadPath;
 
     private DatabaseChangeCallback mCallback;
@@ -100,7 +100,7 @@ public class InternetProviderFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 MapItem mapItem = (MapItem) parent.getAdapter().getItem(position);
-                if (mTileJsonList == null || mTileJsonList.size() == 0) {
+                if (mapItem.getJsonData() == null) {
                     // get the download path
                     mDownloadPath = mapItem.getPath();
                     // check if the file already exists on the sd
@@ -126,7 +126,14 @@ public class InternetProviderFragment extends Fragment {
                     }
                     selectFile(null);
                 } else {
-                    // TODO this is a map from TileJSON so advance to cache options screen
+                    // this is a map from TileJSON so advance to cache options screen
+                    CacheSettingsFragment fragment = new CacheSettingsFragment();
+                    fragment.setmMapItem(mapItem);
+                    getFragmentManager().beginTransaction()
+                            .replace(R.id.container, fragment)
+                            .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                            .addToBackStack(null)
+                            .commit();
                 }
             }
         });
@@ -209,7 +216,7 @@ public class InternetProviderFragment extends Fragment {
     private void selectFile(final MapItem mapItem) {
 
         View actionBarButtons;
-        if(mapItem == null)
+        if (mapItem == null)
             actionBarButtons = getActivity().getLayoutInflater().inflate(R.layout.action_bar_custom_download, new LinearLayout(getActivity()), false);
         else
             actionBarButtons = getActivity().getLayoutInflater().inflate(R.layout.action_bar_custom_confirm, new LinearLayout(getActivity()), false);
@@ -229,7 +236,7 @@ public class InternetProviderFragment extends Fragment {
                 unselectFile();
 
                 // save local file or download remote one
-                if(mapItem != null) {
+                if (mapItem != null) {
                     // try to save it to database
                     if (!Utils.saveMapToDatabase(getActivity(), mapItem)) {
                         Crouton.makeText(getActivity(), getString(R.string.crouton_database_error), Style.ALERT).show();
@@ -375,16 +382,14 @@ public class InternetProviderFragment extends Fragment {
         protected List<MapItem> doInBackground(String... params) {
             if (params[0].endsWith(Consts.EXTENSION_MBTILES)) {
                 // set the name and the path of the file
-                String[] urlSegments = params[0].split("/");
                 MapItem mapItem = new MapItem();
-                mapItem.setName(urlSegments[urlSegments.length - 1].replace("." + Consts.EXTENSION_MBTILES, ""));
+                mapItem.setName(FilenameUtils.getName(params[0]));
                 mapItem.setPath(params[0]);
                 mapItem.setSize(getFileSize(params[0]));
                 List<MapItem> adapterList = new ArrayList<>();
                 adapterList.add(mapItem);
                 return mapItem.getSize() == 0 ? null : adapterList;
             }
-
             // display the list of maps from the TileJSON otherwise
             try {
                 HttpClient client = new DefaultHttpClient();
@@ -397,6 +402,7 @@ public class InternetProviderFragment extends Fragment {
                 String jsonResponse = EntityUtils.toString(responseEntity);
 
                 // parse the response
+                List<TileJson> mTileJsonList = new ArrayList<>();
                 Gson gson = new Gson();
                 if (jsonResponse.startsWith("[")) {
                     // this is a JSON array
@@ -406,7 +412,6 @@ public class InternetProviderFragment extends Fragment {
                 } else {
                     // this is a JSON object
                     TileJson tileJson = gson.fromJson(jsonResponse, TileJson.class);
-                    mTileJsonList = new ArrayList<>();
                     mTileJsonList.add(tileJson);
                 }
 
@@ -416,6 +421,7 @@ public class InternetProviderFragment extends Fragment {
                     MapItem mapItem = new MapItem();
                     mapItem.setName(tileJson.getName());
                     mapItem.setPath(tileJson.getDownload());
+                    mapItem.setJsonData(gson.toJson(tileJson, TileJson.class));
                     if (tileJson.getFilesize() != null)
                         mapItem.setSize(tileJson.getFilesize().longValue());
                     adapterList.add(mapItem);

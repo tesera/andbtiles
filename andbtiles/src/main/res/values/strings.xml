@@ -15,10 +15,10 @@
     <string name="hint_searching_mbtiles">Searching for .mbtiles files…</string>
     <string name="hint_no_results">No filter results.</string>
     <string name="hint_no_file_selected">No file selected</string>
-    <string name="hint_no_cache">No Cache</string>
-    <string name="hint_on_demand">On Demand</string>
-    <string name="hint_cache">Cache</string>
-    <string name="hint_data_only">Data Only</string>
+    <string name="hint_no_cache">No Cache\n(act like proxy)</string>
+    <string name="hint_on_demand">On Demand\n(cache only requested tiles)</string>
+    <string name="hint_cache">Full Cache\n(harvest all tiles)</string>
+    <string name="hint_data_only">Data Only\n(cache only the .mbtiles data)</string>
     <string name="hint_browse_list">or select one from the list:</string>
     <string name="hint_fetchng_data">Fetching data…</string>
     <string name="hint_url">Enter a URL to TileJSON or MBTiles file…</string>

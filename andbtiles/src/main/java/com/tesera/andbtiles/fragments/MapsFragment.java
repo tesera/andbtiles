@@ -68,6 +68,7 @@ public class MapsFragment extends Fragment implements LoaderManager.LoaderCallba
     public void onResume() {
         // set action bar title
         getActivity().getActionBar().setTitle(getString(R.string.app_name));
+        getActivity().getActionBar().setDisplayHomeAsUpEnabled(false);
 
         // reload data if database has changed
         MainActivity activity = (MainActivity) getActivity();

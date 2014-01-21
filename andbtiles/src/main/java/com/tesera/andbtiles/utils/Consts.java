@@ -13,10 +13,10 @@ public class Consts {
     public static final String PREF_NAME = "prefs";
     public static final String PREF_KEY_LOCAL_FILES_CACHE = "local_files_cache";
     // cache methods
-    public static final int CACHE_NO = 1;
-    public static final int CACHE_ON_DEMAND = 2;
-    public static final int CACHE_FULL = 3;
-    public static final int CACHE_DATA = 4;
+    public static final int CACHE_NO = 0;
+    public static final int CACHE_ON_DEMAND = 1;
+    public static final int CACHE_FULL = 2;
+    public static final int CACHE_DATA = 3;
     // extras
     public static final String EXTRA_PATH = "extra_path";
     public static final String EXTRA_NAME = "extra_name";

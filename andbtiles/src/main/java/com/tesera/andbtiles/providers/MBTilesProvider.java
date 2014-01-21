@@ -22,7 +22,7 @@ public class MBTilesProvider implements TileProvider {
 
     @Override
     public Tile getTile(int x, int y, int z) {
-
+        // query the provider for a tile specified by x, y and z coordinates
         String[] projection = new String[]{TilesContract.COLUMN_TILE_DATA};
         String selection = TilesContract.COLUMN_ZOOM_LEVEL + " = ? AND "
                 + TilesContract.COLUMN_TILE_COLUMN + "= ? AND "
@@ -41,11 +41,17 @@ public class MBTilesProvider implements TileProvider {
     }
 
     public MapMetadata getCenterAndZoom(String path) {
+        // query the provider for the center coordinates and default zoom level
         String[] projection = new String[]{TilesContract.COLUMN_VALUE};
         String selection = TilesContract.COLUMN_NAME + " like ?";
         String[] selectionArgs = new String[]{"center"};
 
         Cursor cursor = mContext.getContentResolver().query(Uri.parse(path), projection, selection, selectionArgs, null);
+        // no metadata table is present
+        if(cursor == null)
+            return null;
+
+        // return the metadata
         MapMetadata mapMetadata = null;
         if (cursor.moveToFirst())
             mapMetadata = cursorToMapMetadata(cursor);
@@ -56,13 +62,13 @@ public class MBTilesProvider implements TileProvider {
 
     private Tile cursorToMapItem(Cursor cursor) {
         // get the blob data i.e. the .png image
-        return new Tile(Consts.TILE_SIZE, Consts.TILE_SIZE, cursor.getBlob(cursor.getColumnIndex("tile_data")));
+        return new Tile(Consts.TILE_SIZE, Consts.TILE_SIZE, cursor.getBlob(cursor.getColumnIndex(TilesContract.COLUMN_TILE_DATA)));
     }
 
     private MapMetadata cursorToMapMetadata(Cursor cursor) {
         String center;
         try {
-            center = cursor.getString(0);
+            center = cursor.getString(cursor.getColumnIndex(TilesContract.COLUMN_VALUE));
         } catch (Exception e) {
             return null;
         }
