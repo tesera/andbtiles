@@ -25,6 +25,8 @@ public class TileJson {
     private String webpage;
     private String download;
     private Number filesize;
+    private String version;
+    private String description;
 
     public String getAttribution() {
         return attribution;
@@ -160,5 +162,21 @@ public class TileJson {
 
     public void setFilesize(Number filesize) {
         this.filesize = filesize;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

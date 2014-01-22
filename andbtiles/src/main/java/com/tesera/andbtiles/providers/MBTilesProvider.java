@@ -27,7 +27,7 @@ public class MBTilesProvider implements TileProvider {
         String selection = TilesContract.COLUMN_ZOOM_LEVEL + " = ? AND "
                 + TilesContract.COLUMN_TILE_COLUMN + "= ? AND "
                 + TilesContract.COLUMN_TILE_ROW + "= ?";
-        String[] selectionArgs = new String[]{String.valueOf(z), String.valueOf(x), String.valueOf(Math.pow(2, z) - y - 1)};
+        String[] selectionArgs = new String[]{String.valueOf(z), String.valueOf(x), String.valueOf((int) (Math.pow(2, z) - y - 1))};
         // .mbtiles database use TSM coordinates
         // we need to switch to Google compatible coordinates
         // https://gist.github.com/tmcw/4954720

@@ -6,6 +6,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
 
 import com.google.gson.Gson;
@@ -21,15 +22,29 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 public class TilesContentProvider extends ContentProvider {
 
+    private SQLiteDatabase mDatabase;
     private MapsDatabase mMapsDatabase;
+
     private Gson mGson;
+
+    private List<ContentValues> mMapValues;
+    private List<ContentValues> mImageValues;
 
     @Override
     public boolean onCreate() {
+
+        mMapValues = new ArrayList<>();
+        mImageValues = new ArrayList<>();
         mGson = new Gson();
+
+        mDatabase = null;
         mMapsDatabase = new MapsDatabase(getContext());
         try {
             mMapsDatabase.open();
@@ -53,37 +68,145 @@ public class TilesContentProvider extends ContentProvider {
         if (mapItem == null)
             throw new IllegalArgumentException("Map <" + uri.getLastPathSegment() + "> not found in maps.");
 
+        if (mDatabase == null)
+            mDatabase = SQLiteDatabase.openOrCreateDatabase(mapItem.getPath(), null);
         switch (mapItem.getCacheMode()) {
             case Consts.CACHE_NO:
                 // since there is no caching there is no metadata
                 // parse the TileJSON response instead
                 if (tableName.equalsIgnoreCase(TilesContract.TABLE_METADATA)) {
+                    // FIXME needs more complex algorithm if requesting values other than center
                     // match the database center value
                     // the center values are in format lon,lat,zoom
                     // ex. -63.1275,45.1936,9
                     TileJson tileJson = mGson.fromJson(mapItem.getJsonData(), TileJson.class);
-                    String centerValue = "";
-                    for (Number number : tileJson.getCenter())
-                        centerValue += number.toString() + ",";
-                    centerValue = centerValue.substring(0, centerValue.lastIndexOf(","));
 
                     String[] columnNames = {TilesContract.COLUMN_NAME, TilesContract.COLUMN_VALUE};
-                    String[] columnData = {"center", centerValue};
+                    String[] columnData = {"center", Arrays.toString(tileJson.getCenter().toArray()).replace("[", "").replace("]", "").replace(" ", "")};
 
                     MatrixCursor cursor = new MatrixCursor(columnNames);
                     cursor.addRow(columnData);
                     return cursor;
                 }
                 // fetch tile from the web
-                return getCursorWithTile(selectionArgs, mapItem);
+                int z = Integer.parseInt(selectionArgs[0]);
+                int x = Integer.parseInt(selectionArgs[1]);
+                // we need to switch back from TSM to OSM coordinates since web fetching works in that format
+                int y = (int) (Math.pow(2, z) - Double.parseDouble(selectionArgs[2]) - 1);
+                TileJson tileJson = mGson.fromJson(mapItem.getJsonData(), TileJson.class);
+                byte[] tileData = getTileBytes(z, x, y, tileJson);
+                // return the cursor containing the tile_data
+                return getCursorWithTile(tileData);
+            case Consts.CACHE_ON_DEMAND:
+                // try to find the tile in the database
+                Cursor cursor = mDatabase.query(tableName, projection, selection, selectionArgs, null, null, sortOrder);
+                if (cursor != null && cursor.getCount() > 0)
+                    return cursor;
+
+                // fetch tile from the web
+                z = Integer.parseInt(selectionArgs[0]);
+                x = Integer.parseInt(selectionArgs[1]);
+                // we need to switch back from TSM to OSM coordinates since web fetching works in that format
+                y = (int) (Math.pow(2, z) - Double.parseDouble(selectionArgs[2]) - 1);
+                tileJson = mGson.fromJson(mapItem.getJsonData(), TileJson.class);
+                tileData = getTileBytes(z, x, y, tileJson);
+
+                final byte[] tileDataFinal = tileData;
+                final int zFinal = z;
+                final int xFinal = x;
+                final int yFinal = y;
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // save to database in worker thread
+                        // the operation can be quite lengthily because
+                        // we cannot make batch insert since the tiles are requested asynchronously
+                        String tile_id = UUID.nameUUIDFromBytes(tileDataFinal).toString();
+
+                        String[] projection = new String[]{TilesContract.COLUMN_TILE_ID};
+                        String selection = TilesContract.COLUMN_TILE_ID + " = ?";
+                        String[] selectionParams = new String[]{tile_id};
+
+                        // only insert if we don't have the tile
+                        // this will prevent adding redundant tiles like blue ocean tile
+                        Cursor cursor = mDatabase.query(TilesContract.TABLE_IMAGES, projection, selection, selectionParams, null, null, null);
+                        if (cursor.getCount() == 0) {
+                            // insert into separate tables
+                            ContentValues values = new ContentValues();
+                            values.put(TilesContract.COLUMN_TILE_ID, tile_id);
+                            values.put(TilesContract.COLUMN_TILE_DATA, tileDataFinal);
+                            mImageValues.add(values);
+                            // make batch insert for every 20 tiles
+                            if (mImageValues.size() > 20) {
+                                batchInsertImages(mImageValues);
+                                mImageValues.clear();
+                            }
+                        }
+
+                        selection = TilesContract.COLUMN_ZOOM_LEVEL + " = ? AND "
+                                + TilesContract.COLUMN_TILE_COLUMN + "= ? AND "
+                                + TilesContract.COLUMN_TILE_ROW + "= ?";
+                        selectionParams = new String[]{String.valueOf(zFinal), String.valueOf(xFinal), String.valueOf((int) (Math.pow(2, zFinal) - yFinal - 1))};
+
+                        // only insert if we don't have the tile
+                        cursor = mDatabase.query(TilesContract.TABLE_MAP, projection, selection, selectionParams, null, null, null);
+                        if (cursor.getCount() == 0) {
+                            ContentValues values = new ContentValues();
+                            values.put(TilesContract.COLUMN_ZOOM_LEVEL, zFinal);
+                            values.put(TilesContract.COLUMN_TILE_COLUMN, xFinal);
+                            values.put(TilesContract.COLUMN_TILE_ROW, String.valueOf((int) (Math.pow(2, zFinal) - yFinal - 1)));
+                            values.put(TilesContract.COLUMN_TILE_ID, tile_id);
+                            mMapValues.add(values);
+                            // make batch insert for every 20 tiles
+                            if (mMapValues.size() > 20) {
+                                batchInsertMap(mMapValues);
+                                mMapValues.clear();
+                            }
+                        }
+                    }
+                }).start();
+
+                // return the cursor containing the tile_data
+                return getCursorWithTile(tileData);
             case Consts.CACHE_FULL:
-                return SQLiteDatabase.openOrCreateDatabase(mapItem.getPath(), null).query(tableName, projection, selection, selectionArgs, null, null, sortOrder);
+                return mDatabase.query(tableName, projection, selection, selectionArgs, null, null, sortOrder);
             // TODO implement all cache modes
             default:
                 break;
         }
 
         return null;
+    }
+
+    private void batchInsertImages(List<ContentValues> cValues) {
+        String sql = "INSERT INTO " + TilesContract.TABLE_IMAGES + " VALUES (?,?);";
+        SQLiteStatement statement = mDatabase.compileStatement(sql);
+        mDatabase.beginTransaction();
+        for (ContentValues cValue : cValues) {
+            statement.clearBindings();
+            statement.bindBlob(1, cValue.getAsByteArray(TilesContract.COLUMN_TILE_DATA));
+            statement.bindString(2, cValue.getAsString(TilesContract.COLUMN_TILE_ID));
+            statement.execute();
+        }
+        mDatabase.setTransactionSuccessful();
+        mDatabase.endTransaction();
+    }
+
+    private void batchInsertMap(List<ContentValues> cValues) {
+        String sql = "INSERT INTO " + TilesContract.TABLE_MAP + " VALUES (?,?,?,?);";
+        SQLiteStatement statement = mDatabase.compileStatement(sql);
+        mDatabase.beginTransaction();
+        for (ContentValues cValue : cValues) {
+            statement.clearBindings();
+            statement.bindLong(1, cValue.getAsLong(TilesContract.COLUMN_ZOOM_LEVEL));
+            statement.bindLong(2, cValue.getAsLong(TilesContract.COLUMN_TILE_COLUMN));
+            statement.bindLong(3, cValue.getAsLong(TilesContract.COLUMN_TILE_ROW));
+            statement.bindString(4, cValue.getAsString(TilesContract.COLUMN_TILE_ID));
+            statement.execute();
+        }
+        mDatabase.setTransactionSuccessful();
+        mDatabase.endTransaction();
     }
 
     @Override
@@ -106,13 +229,19 @@ public class TilesContentProvider extends ContentProvider {
         throw new UnsupportedOperationException("You are not allowed to update data.");
     }
 
-    private Cursor getCursorWithTile(String[] selectionArgs, MapItem mapItem) {
-        int z = Integer.parseInt(selectionArgs[0]);
-        int x = Integer.parseInt(selectionArgs[1]);
-        // we need to switch back from TSM to OSM coordinates since web fetching works in that format
-        int y = (int) (Math.pow(2, z) - Double.parseDouble(selectionArgs[2]) - 1);
-        // get the tile url scheme and replace it with actual values
-        TileJson tileJson = mGson.fromJson(mapItem.getJsonData(), TileJson.class);
+    private Cursor getCursorWithTile(byte[] tileData) {
+        // convert the primitive input stream to the wrapper class
+        if (tileData == null)
+            return null;
+
+        // create an artificial cursor and return it as content provider query result
+        String[] columnNames = new String[]{TilesContract.COLUMN_TILE_DATA};
+        MatrixCursor cursor = new MatrixCursor(columnNames);
+        cursor.addRow(new Object[]{tileData});
+        return cursor;
+    }
+
+    private byte[] getTileBytes(int z, int x, int y, TileJson tileJson) {
         String tilesUrl = tileJson.getTiles().get(0).toString();
         tilesUrl = tilesUrl.replace("{z}", "" + z).replace("{x}", "" + x).replace("{y}", "" + y);
         // this already is an worker thread so we can fetch network data here
@@ -124,13 +253,7 @@ public class TilesContentProvider extends ContentProvider {
             connection.connect();
             InputStream input = connection.getInputStream();
             // convert the primitive input stream to the wrapper class
-            byte[] tileData = IOUtils.toByteArray(input);
-
-            // create an artificial cursor and return it as content provider query result
-            String[] columnNames = new String[]{TilesContract.COLUMN_TILE_DATA};
-            MatrixCursor cursor = new MatrixCursor(columnNames);
-            cursor.addRow(new Object[]{tileData});
-            return cursor;
+            return IOUtils.toByteArray(input);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
