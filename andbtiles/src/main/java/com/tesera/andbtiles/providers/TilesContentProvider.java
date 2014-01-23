@@ -170,8 +170,8 @@ public class TilesContentProvider extends ContentProvider {
                 // return the cursor containing the tile_data
                 return getCursorWithTile(tileData);
             case Consts.CACHE_FULL:
+            case Consts.CACHE_DATA:
                 return mDatabase.query(tableName, projection, selection, selectionArgs, null, null, sortOrder);
-            // TODO implement all cache modes
             default:
                 break;
         }

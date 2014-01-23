@@ -2,6 +2,7 @@ package com.tesera.andbtiles;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -16,13 +17,8 @@ import com.tesera.andbtiles.utils.TilesContract;
 
 import java.io.File;
 
-import de.keyboardsurfer.android.widget.crouton.Crouton;
-import de.keyboardsurfer.android.widget.crouton.Style;
 
 public class MapActivity extends Activity {
-
-    GoogleMap mMap;
-    MBTilesProvider mMBTilesProvider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +28,7 @@ public class MapActivity extends Activity {
         // get the database path
         String name = getIntent().getStringExtra(Consts.EXTRA_NAME);
         if (name == null) {
-            Crouton.makeText(this, getString(R.string.crouton_invalid_file), Style.ALERT).show();
+            Toast.makeText(this, getString(R.string.crouton_invalid_file), Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -40,21 +36,20 @@ public class MapActivity extends Activity {
         // set the action bar title
         getActionBar().setTitle(name);
 
-        mMap = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
-        mMap.setMapType(GoogleMap.MAP_TYPE_NONE);
+        GoogleMap map = ((MapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
+        map.setMapType(GoogleMap.MAP_TYPE_NONE);
 
         // display tiles
-        mMBTilesProvider = new MBTilesProvider(this, TilesContract.CONTENT_URI + name + File.separator + TilesContract.TABLE_TILES);
+        MBTilesProvider mbTilesProvider = new MBTilesProvider(this, TilesContract.CONTENT_URI + name + File.separator + TilesContract.TABLE_TILES);
         // create new TileOverlayOptions instance.
         TileOverlayOptions tileOverlayOptions = new TileOverlayOptions();
         // set the tile provider to your custom implementation.
-        tileOverlayOptions.tileProvider(mMBTilesProvider);
-        mMap.addTileOverlay(tileOverlayOptions);
+        tileOverlayOptions.tileProvider(mbTilesProvider);
+        map.addTileOverlay(tileOverlayOptions);
 
         // at this point the map will not be focused
         // use the metadata to get the map center and default zoom level
-        MapMetadata mapMetadata = mMBTilesProvider.getCenterAndZoom(TilesContract.CONTENT_URI + name + File.separator + TilesContract.TABLE_METADATA);
-
+        MapMetadata mapMetadata = mbTilesProvider.getCenterAndZoom(TilesContract.CONTENT_URI + name + File.separator + TilesContract.TABLE_METADATA);
         // if no metadata is present don't display the map
         // TODO maybe find a random tile and center it on certain zoom level
         if (mapMetadata == null)
@@ -63,7 +58,16 @@ public class MapActivity extends Activity {
         // center and zoom to map
         CameraUpdate center = CameraUpdateFactory.newLatLng(new LatLng(mapMetadata.getLat(), mapMetadata.getLon()));
         CameraUpdate zoom = CameraUpdateFactory.zoomTo(mapMetadata.getZoom());
-        mMap.moveCamera(center);
-        mMap.animateCamera(zoom);
+        map.moveCamera(center);
+        map.animateCamera(zoom);
+    }
+
+    @Override
+    protected void onPause() {
+        // FIXME
+        // we kill the process so the content provider connection is released
+        // needed for opening a new map from different database
+        android.os.Process.killProcess(android.os.Process.myPid());
+        super.onPause();
     }
 }

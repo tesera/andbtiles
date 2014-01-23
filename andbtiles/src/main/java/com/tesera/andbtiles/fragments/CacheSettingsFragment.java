@@ -11,6 +11,7 @@ import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.tesera.andbtiles.R;
@@ -26,9 +27,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
-import de.keyboardsurfer.android.widget.crouton.Crouton;
-import de.keyboardsurfer.android.widget.crouton.Style;
 
 
 public class CacheSettingsFragment extends Fragment {
@@ -96,7 +94,7 @@ public class CacheSettingsFragment extends Fragment {
                             mbTilesDatabase.open();
                         } catch (SQLException e) {
                             // cannot open database on file system
-                            Crouton.makeText(getActivity(), getString(R.string.crouton_database_error), Style.ALERT).show();
+                            Toast.makeText(getActivity(), getString(R.string.crouton_database_error), Toast.LENGTH_SHORT).show();
                             e.printStackTrace();
                             return;
                         }
@@ -118,20 +116,24 @@ public class CacheSettingsFragment extends Fragment {
                         mMapItem.setSize(new File(path).length());
                         mMapItem.setPath(path);
                         break;
+                    case Consts.CACHE_DATA:
+                        // start download using the download manager
+                        mCallback.downloadFile(mMapItem.getPath());
+                        return;
                 }
 
                 // check if the map is already added
                 if (Utils.isMapInDatabase(getActivity(), mMapItem)) {
-                    Crouton.makeText(getActivity(), getString(R.string.crouton_map_exsists), Style.INFO).show();
+                    Toast.makeText(getActivity(), getString(R.string.crouton_map_exsists), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 // try to save it to database
                 if (!Utils.saveMapToDatabase(getActivity(), mMapItem)) {
-                    Crouton.makeText(getActivity(), getString(R.string.crouton_database_error), Style.ALERT).show();
+                    Toast.makeText(getActivity(), getString(R.string.crouton_database_error), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 // return to previous screen, notify dataSetChanged and inform the user
-                Crouton.makeText(getActivity(), getString(R.string.crouton_map_added), Style.INFO).show();
+                Toast.makeText(getActivity(), getString(R.string.crouton_map_added), Toast.LENGTH_SHORT).show();
                 mCallback.onDatabaseChanged();
                 getFragmentManager().popBackStack();
                 getFragmentManager().popBackStack();

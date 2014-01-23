@@ -17,6 +17,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -32,9 +33,6 @@ import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-
-import de.keyboardsurfer.android.widget.crouton.Crouton;
-import de.keyboardsurfer.android.widget.crouton.Style;
 
 public class LocaProviderFragment extends Fragment {
 
@@ -155,7 +153,7 @@ public class LocaProviderFragment extends Fragment {
         try {
             mMBTilesFile = new File(new URI(data.getDataString()).getPath());
         } catch (URISyntaxException e) {
-            Crouton.makeText(getActivity(), getString(R.string.crouton_invalid_file), Style.ALERT).show();
+            Toast.makeText(getActivity(), getString(R.string.crouton_invalid_file), Toast.LENGTH_SHORT).show();
             return;
         }
         mName.setText(mMBTilesFile.getName());
@@ -168,7 +166,7 @@ public class LocaProviderFragment extends Fragment {
         if (mMBTilesFile == null)
             return;
         if (!mMBTilesFile.getName().endsWith(Consts.EXTENSION_MBTILES)) {
-            Crouton.makeText(getActivity(), getString(R.string.crouton_invalid_file), Style.ALERT).show();
+            Toast.makeText(getActivity(), getString(R.string.crouton_invalid_file), Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -195,7 +193,7 @@ public class LocaProviderFragment extends Fragment {
 
                 // check if the map is already added
                 if (Utils.isMapInDatabase(getActivity(), mapItem)) {
-                    Crouton.makeText(getActivity(), getString(R.string.crouton_map_exsists), Style.INFO).show();
+                    Toast.makeText(getActivity(), getString(R.string.crouton_map_exsists), Toast.LENGTH_SHORT).show();
                     unselectFile();
                     return;
                 }
@@ -203,12 +201,12 @@ public class LocaProviderFragment extends Fragment {
                 // try to save it to database
                 if (!Utils.saveMapToDatabase(getActivity(), mapItem)) {
                     unselectFile();
-                    Crouton.makeText(getActivity(), getString(R.string.crouton_database_error), Style.ALERT).show();
+                    Toast.makeText(getActivity(), getString(R.string.crouton_database_error), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 // return to previous screen, notify dataSetChanged and inform the user
                 unselectFile();
-                Crouton.makeText(getActivity(), getString(R.string.crouton_map_added), Style.INFO).show();
+                Toast.makeText(getActivity(), getString(R.string.crouton_map_added), Toast.LENGTH_SHORT).show();
                 mCallback.onDatabaseChanged();
                 getFragmentManager().popBackStack();
             }

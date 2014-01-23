@@ -2,23 +2,12 @@ package com.tesera.andbtiles.fragments;
 
 
 import android.app.Activity;
-import android.app.DownloadManager;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.TaskStackBuilder;
 import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -33,10 +22,10 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SearchView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.tesera.andbtiles.MainActivity;
 import com.tesera.andbtiles.R;
 import com.tesera.andbtiles.adapters.MBTilesAdapter;
 import com.tesera.andbtiles.adapters.MapsAdapter;
@@ -57,14 +46,9 @@ import org.apache.http.util.EntityUtils;
 import java.io.File;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
-import de.keyboardsurfer.android.widget.crouton.Crouton;
-import de.keyboardsurfer.android.widget.crouton.Style;
 
 public class InternetProviderFragment extends Fragment {
 
@@ -116,11 +100,11 @@ public class InternetProviderFragment extends Fragment {
                         mapItem.setSize(mbTilesFile.length());
                         // check if it is already added
                         if (Utils.isMapInDatabase(getActivity(), mapItem)) {
-                            Crouton.makeText(getActivity(), getString(R.string.crouton_map_exsists), Style.INFO).show();
+                            Toast.makeText(getActivity(), getString(R.string.crouton_map_exsists), Toast.LENGTH_SHORT).show();
                             return;
                         }
 
-                        Crouton.makeText(getActivity(), getString(R.string.crouton_file_exists), Style.INFO).show();
+                        Toast.makeText(getActivity(), getString(R.string.crouton_file_exists), Toast.LENGTH_SHORT).show();
                         selectFile(mapItem);
                         return;
                     }
@@ -239,106 +223,17 @@ public class InternetProviderFragment extends Fragment {
                 if (mapItem != null) {
                     // try to save it to database
                     if (!Utils.saveMapToDatabase(getActivity(), mapItem)) {
-                        Crouton.makeText(getActivity(), getString(R.string.crouton_database_error), Style.ALERT).show();
+                        Toast.makeText(getActivity(), getString(R.string.crouton_database_error), Toast.LENGTH_SHORT).show();
                         return;
                     }
                     // return to previous screen, notify dataSetChanged and inform the user
-                    Crouton.makeText(getActivity(), getString(R.string.crouton_map_added), Style.INFO).show();
+                    Toast.makeText(getActivity(), getString(R.string.crouton_map_added), Toast.LENGTH_SHORT).show();
                     mCallback.onDatabaseChanged();
                     getFragmentManager().popBackStack();
                     return;
                 }
 
-                // start download using the download manager
-                final DownloadManager downloadManager = (DownloadManager) getActivity().getSystemService(Context.DOWNLOAD_SERVICE);
-                // the request should follow the provided URL
-                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(mDownloadPath));
-                // the download destination should be on the external SD card inside the app folder
-                request.setDestinationInExternalPublicDir(Consts.FOLDER_ROOT, FilenameUtils.getName(mDownloadPath));
-                final long enqueue = downloadManager.enqueue(request);
-
-                // register a broadcast receiver to listen to download complete event
-                BroadcastReceiver receiver = new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        String action = intent.getAction();
-                        // check for download complete action
-                        if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)) {
-                            DownloadManager.Query query = new DownloadManager.Query();
-                            query.setFilterById(enqueue);
-                            Cursor cursor = downloadManager.query(query);
-                            if (cursor.moveToFirst()) {
-                                int columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-                                if (DownloadManager.STATUS_SUCCESSFUL == cursor.getInt(columnIndex)) {
-                                    // find the file and save the map item to the database
-                                    String uriString = cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI));
-
-                                    File mbTilesFile;
-                                    try {
-                                        mbTilesFile = new File(new URI(uriString).getPath());
-                                    } catch (URISyntaxException e) {
-                                        e.printStackTrace();
-                                        return;
-                                    }
-                                    // create new map item
-                                    MapItem mapItem = new MapItem();
-                                    mapItem.setPath(mbTilesFile.getAbsolutePath());
-                                    mapItem.setName(mbTilesFile.getName());
-                                    mapItem.setCacheMode(Consts.CACHE_FULL);
-                                    mapItem.setSize(mbTilesFile.length());
-
-                                    // try to save it to database
-                                    if (!Utils.saveMapToDatabase(getActivity(), mapItem)) {
-                                        // since this is a long running operation the activity/fragment may not be visible upon completion
-                                        if (!isVisible())
-                                            return;
-                                        Crouton.makeText(getActivity(), getString(R.string.crouton_database_error), Style.ALERT).show();
-                                        return;
-                                    }
-
-                                    // return to previous screen, notify dataSetChanged and inform the user
-                                    try {
-                                        Crouton.makeText(getActivity(), getString(R.string.crouton_map_added), Style.INFO).show();
-                                        mCallback.onDatabaseChanged();
-                                        getFragmentManager().popBackStack();
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                        mCallback.onDatabaseChanged();
-                                        // since this is a long running operation the activity/fragment may not be visible upon completion
-                                        // add notification for success
-                                        NotificationCompat.Builder builder =
-                                                new NotificationCompat.Builder(context)
-                                                        .setSmallIcon(android.R.drawable.stat_sys_download_done)
-                                                        .setContentTitle(context.getString(R.string.crouton_download_complete))
-                                                        .setContentText(mbTilesFile.getAbsolutePath())
-                                                        .setAutoCancel(true)
-                                                        .setDefaults(Notification.DEFAULT_ALL);
-                                        // Creates an explicit intent for an Activity in your app
-                                        Intent resultIntent = new Intent(context, MainActivity.class);
-                                        // The stack builder object will contain an artificial back stack for the
-                                        // started Activity.
-                                        // This ensures that navigating backward from the Activity leads out of
-                                        // your application to the Home screen.
-                                        TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
-                                        // Adds the back stack for the Intent (but not the Intent itself)
-                                        stackBuilder.addParentStack(MainActivity.class);
-                                        // Adds the Intent that starts the Activity to the top of the stack
-                                        stackBuilder.addNextIntent(resultIntent);
-                                        PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-                                        builder.setContentIntent(resultPendingIntent);
-                                        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-                                        // mId allows you to update the notification later on.
-                                        notificationManager.notify(0, builder.build());
-                                    }
-                                }
-                            }
-                        }
-                        // unregister the receiver since the download is done
-                        context.unregisterReceiver(this);
-                    }
-                };
-
-                getActivity().registerReceiver(receiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+                mCallback.downloadFile(mDownloadPath);
             }
         });
 
@@ -467,7 +362,7 @@ public class InternetProviderFragment extends Fragment {
             mFetch.setEnabled(true);
             mFetch.setText(getString(R.string.btn_fetch));
             if (result == null || result.size() == 0) {
-                Crouton.makeText(getActivity(), getString(R.string.crouton_fetch_error), Style.ALERT).show();
+                Toast.makeText(getActivity(), getString(R.string.crouton_fetch_error), Toast.LENGTH_SHORT).show();
                 return;
             }
             // display the results
