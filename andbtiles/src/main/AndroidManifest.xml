@@ -46,6 +46,8 @@
             android:authorities="com.tesera.andbtiles.provider"
             android:exported="true"
             android:multiprocess="true" />
+
+        <service android:name=".services.HarvesterService" />
     </application>
 
 </manifest>

@@ -16,7 +16,7 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.widget.Toast;
 
-import com.tesera.andbtiles.callbacks.DatabaseChangeCallback;
+import com.tesera.andbtiles.callbacks.ActivityCallback;
 import com.tesera.andbtiles.fragments.MapsFragment;
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.utils.Consts;
@@ -28,7 +28,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class MainActivity extends Activity implements DatabaseChangeCallback {
+public class MainActivity extends Activity implements ActivityCallback {
 
     private boolean isDatabaseChanged = false;
 

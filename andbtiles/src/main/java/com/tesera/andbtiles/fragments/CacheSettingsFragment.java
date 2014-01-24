@@ -2,6 +2,8 @@ package com.tesera.andbtiles.fragments;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.content.Intent;
+import android.database.sqlite.SQLiteConstraintException;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.LayoutInflater;
@@ -15,10 +17,11 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.tesera.andbtiles.R;
-import com.tesera.andbtiles.callbacks.DatabaseChangeCallback;
+import com.tesera.andbtiles.callbacks.ActivityCallback;
 import com.tesera.andbtiles.databases.MBTilesDatabase;
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.pojos.TileJson;
+import com.tesera.andbtiles.services.HarvesterService;
 import com.tesera.andbtiles.utils.Consts;
 import com.tesera.andbtiles.utils.Utils;
 
@@ -34,11 +37,11 @@ public class CacheSettingsFragment extends Fragment {
     private MapItem mMapItem;
     private RadioGroup mCacheGroup;
 
-    private DatabaseChangeCallback mCallback;
+    private ActivityCallback mCallback;
 
     @Override
     public void onAttach(Activity activity) {
-        mCallback = (DatabaseChangeCallback) activity;
+        mCallback = (ActivityCallback) activity;
         super.onAttach(activity);
     }
 
@@ -83,36 +86,22 @@ public class CacheSettingsFragment extends Fragment {
             public void onClick(View v) {
                 // set the cache method
                 mMapItem.setCacheMode(mCacheGroup.indexOfChild(mCacheGroup.findViewById(mCacheGroup.getCheckedRadioButtonId())));
+                String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
+                        + Consts.FOLDER_ROOT + File.separator + mMapItem.getName() + "." + Consts.EXTENSION_MBTILES;
                 // if the cache modes are On Demand or Full Cache create a database on the SD card and save the path
                 switch (mMapItem.getCacheMode()) {
                     case Consts.CACHE_FULL:
+                        insertMetadata(path);
+                        // TODO add options fragment
+                        Intent harvesterService = new Intent(getActivity(), HarvesterService.class);
+                        harvesterService.putExtra(Consts.EXTRA_JSON, new Gson().toJson(mMapItem, MapItem.class));
+                        getActivity().startService(harvesterService);
+                        Toast.makeText(getActivity(), getString(R.string.crouton_harvesting), Toast.LENGTH_SHORT).show();
+                        getFragmentManager().popBackStack();
+                        getFragmentManager().popBackStack();
+                        return;
                     case Consts.CACHE_ON_DEMAND:
-                        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
-                                + Consts.FOLDER_ROOT + File.separator + mMapItem.getName() + "." + Consts.EXTENSION_MBTILES;
-                        MBTilesDatabase mbTilesDatabase = new MBTilesDatabase(getActivity(), path);
-                        try {
-                            mbTilesDatabase.open();
-                        } catch (SQLException e) {
-                            // cannot open database on file system
-                            Toast.makeText(getActivity(), getString(R.string.crouton_database_error), Toast.LENGTH_SHORT).show();
-                            e.printStackTrace();
-                            return;
-                        }
-                        // fill the metadata table
-                        TileJson tileJson = new Gson().fromJson(mMapItem.getJsonData(), TileJson.class);
-                        Map<String, String> metadataMap = new HashMap<>();
-                        metadataMap.put("bounds", Arrays.toString(tileJson.getBounds().toArray()).replace("[", "").replace("]", "").replace(" ", ""));
-                        metadataMap.put("center", Arrays.toString(tileJson.getCenter().toArray()).replace("[", "").replace("]", "").replace(" ", ""));
-                        metadataMap.put("minzoom", tileJson.getMinzoom().toString());
-                        metadataMap.put("maxzoom", tileJson.getMaxzoom().toString());
-                        metadataMap.put("name", tileJson.getName());
-                        metadataMap.put("description", tileJson.getDescription());
-                        metadataMap.put("attribution", tileJson.getAttribution());
-                        metadataMap.put("template", "");
-                        metadataMap.put("version", tileJson.getVersion());
-
-                        mbTilesDatabase.insertMetadata(metadataMap);
-                        mbTilesDatabase.close();
+                        insertMetadata(path);
                         mMapItem.setSize(new File(path).length());
                         mMapItem.setPath(path);
                         break;
@@ -148,6 +137,36 @@ public class CacheSettingsFragment extends Fragment {
 
         getActivity().getActionBar().setDisplayShowCustomEnabled(true);
         getActivity().getActionBar().setCustomView(actionBarButtons);
+    }
+
+    private void insertMetadata(String path) {
+        MBTilesDatabase mbTilesDatabase = new MBTilesDatabase(getActivity(), path);
+        try {
+            mbTilesDatabase.open();
+        } catch (SQLException e) {
+            // cannot open database on file system
+            Toast.makeText(getActivity(), getString(R.string.crouton_database_error), Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+            return;
+        }
+        // fill the metadata table
+        TileJson tileJson = new Gson().fromJson(mMapItem.getJsonData(), TileJson.class);
+        Map<String, String> metadataMap = new HashMap<>();
+        metadataMap.put("bounds", Arrays.toString(tileJson.getBounds().toArray()).replace("[", "").replace("]", "").replace(" ", ""));
+        metadataMap.put("center", Arrays.toString(tileJson.getCenter().toArray()).replace("[", "").replace("]", "").replace(" ", ""));
+        metadataMap.put("minzoom", tileJson.getMinzoom().toString());
+        metadataMap.put("maxzoom", tileJson.getMaxzoom().toString());
+        metadataMap.put("name", tileJson.getName());
+        metadataMap.put("description", tileJson.getDescription());
+        metadataMap.put("attribution", tileJson.getAttribution());
+        metadataMap.put("template", "");
+        metadataMap.put("version", tileJson.getVersion());
+        try {
+            mbTilesDatabase.insertMetadata(metadataMap);
+        } catch (SQLiteConstraintException e) {
+            // metadata already exists so skip this
+        }
+        mbTilesDatabase.close();
     }
 
     private void unselectFile() {

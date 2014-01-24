@@ -20,6 +20,7 @@ public class Consts {
     // extras
     public static final String EXTRA_PATH = "extra_path";
     public static final String EXTRA_NAME = "extra_name";
+    public static final String EXTRA_JSON = "extra_json";
     // tiles
     public static final int TILE_SIZE = 256;
 }

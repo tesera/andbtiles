@@ -39,6 +39,7 @@
     <string name="crouton_map_exsists">Map already added.</string>
     <string name="crouton_file_exists">File already exists on SD. Add to maps?</string>
     <string name="crouton_downloading">Downloading file…</string>
+    <string name="crouton_harvesting">Harvesting tiles…</string>
 
     <string name="dialog_title_local_provider">Add Local Provider</string>
     <string name="dialog_message_local_provider" formatted="false">Use %s as a local provider?</string>

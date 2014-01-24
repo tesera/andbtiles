@@ -23,7 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.tesera.andbtiles.R;
 import com.tesera.andbtiles.adapters.MBTilesAdapter;
-import com.tesera.andbtiles.callbacks.DatabaseChangeCallback;
+import com.tesera.andbtiles.callbacks.ActivityCallback;
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.utils.Consts;
 import com.tesera.andbtiles.utils.Utils;
@@ -42,11 +42,11 @@ public class LocaProviderFragment extends Fragment {
     private Menu mMenu;
 
     private File mMBTilesFile;
-    private DatabaseChangeCallback mCallback;
+    private ActivityCallback mCallback;
 
     @Override
     public void onAttach(Activity activity) {
-        mCallback = (DatabaseChangeCallback) activity;
+        mCallback = (ActivityCallback) activity;
         super.onAttach(activity);
     }
 

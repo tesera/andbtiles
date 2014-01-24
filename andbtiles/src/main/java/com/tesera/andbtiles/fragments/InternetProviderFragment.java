@@ -29,7 +29,7 @@ import com.google.gson.reflect.TypeToken;
 import com.tesera.andbtiles.R;
 import com.tesera.andbtiles.adapters.MBTilesAdapter;
 import com.tesera.andbtiles.adapters.MapsAdapter;
-import com.tesera.andbtiles.callbacks.DatabaseChangeCallback;
+import com.tesera.andbtiles.callbacks.ActivityCallback;
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.pojos.TileJson;
 import com.tesera.andbtiles.utils.Consts;
@@ -59,11 +59,11 @@ public class InternetProviderFragment extends Fragment {
 
     private String mDownloadPath;
 
-    private DatabaseChangeCallback mCallback;
+    private ActivityCallback mCallback;
 
     @Override
     public void onAttach(Activity activity) {
-        mCallback = (DatabaseChangeCallback) activity;
+        mCallback = (ActivityCallback) activity;
         super.onAttach(activity);
     }
 
