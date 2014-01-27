@@ -23,6 +23,7 @@
     <string name="hint_fetchng_data">Fetching data…</string>
     <string name="hint_url">Enter a URL to TileJSON or MBTiles file…</string>
     <string name="hint_url_error">Please enter a valid URL</string>
+    <string name="hint_harvest_tiles_number" formatted="false">Harvest %d tiles?</string>
 
     <string name="btn_browse">Browse…</string>
     <string name="btn_cancel">Cancel</string>

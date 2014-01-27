@@ -2,7 +2,7 @@ package com.tesera.andbtiles.fragments;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.content.Intent;
+import android.app.FragmentTransaction;
 import android.database.sqlite.SQLiteConstraintException;
 import android.os.Bundle;
 import android.os.Environment;
@@ -21,7 +21,6 @@ import com.tesera.andbtiles.callbacks.ActivityCallback;
 import com.tesera.andbtiles.databases.MBTilesDatabase;
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.pojos.TileJson;
-import com.tesera.andbtiles.services.HarvesterService;
 import com.tesera.andbtiles.utils.Consts;
 import com.tesera.andbtiles.utils.Utils;
 
@@ -91,14 +90,13 @@ public class CacheSettingsFragment extends Fragment {
                 // if the cache modes are On Demand or Full Cache create a database on the SD card and save the path
                 switch (mMapItem.getCacheMode()) {
                     case Consts.CACHE_FULL:
-                        insertMetadata(path);
-                        // TODO add options fragment
-                        Intent harvesterService = new Intent(getActivity(), HarvesterService.class);
-                        harvesterService.putExtra(Consts.EXTRA_JSON, new Gson().toJson(mMapItem, MapItem.class));
-                        getActivity().startService(harvesterService);
-                        Toast.makeText(getActivity(), getString(R.string.crouton_harvesting), Toast.LENGTH_SHORT).show();
-                        getFragmentManager().popBackStack();
-                        getFragmentManager().popBackStack();
+                        HarvestSettingsFragment fragment = new HarvestSettingsFragment();
+                        fragment.setmMapItem(mMapItem);
+                        getFragmentManager().beginTransaction()
+                                .replace(R.id.container, fragment)
+                                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                                .addToBackStack(null)
+                                .commit();
                         return;
                     case Consts.CACHE_ON_DEMAND:
                         insertMetadata(path);

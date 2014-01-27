@@ -1,1 +1,1 @@
-include ':andbtiles'
+include ':andbtiles', 'libraries:range-bar:rangebar'

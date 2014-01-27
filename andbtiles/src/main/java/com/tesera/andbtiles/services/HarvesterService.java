@@ -7,7 +7,6 @@ import android.app.PendingIntent;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.os.Environment;
@@ -37,6 +36,7 @@ import java.util.UUID;
 public class HarvesterService extends IntentService {
 
     private SQLiteDatabase mDatabase;
+    private TileJson mTileJson;
 
     public HarvesterService(String name) {
         super(name);
@@ -50,31 +50,31 @@ public class HarvesterService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         // get the tile json data
         MapItem mapItem = new Gson().fromJson(intent.getStringExtra(Consts.EXTRA_JSON), MapItem.class);
-        TileJson tileJson = new Gson().fromJson(mapItem.getJsonData(), TileJson.class);
+        mTileJson = new Gson().fromJson(mapItem.getJsonData(), TileJson.class);
 
         // open the database for inserting
         String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
-                + Consts.FOLDER_ROOT + File.separator + tileJson.getName() + "." + Consts.EXTENSION_MBTILES;
+                + Consts.FOLDER_ROOT + File.separator + mTileJson.getName() + "." + Consts.EXTENSION_MBTILES;
         mDatabase = SQLiteDatabase.openOrCreateDatabase(path, null);
         List<ContentValues> mMapValues = new ArrayList<>();
         List<ContentValues> mImageValues = new ArrayList<>();
 
         // notify the user
-        int maxProgress = tileJson.getMaxzoom().intValue() - tileJson.getMinzoom().intValue();
-        int progress = 0;
+        int maxProgress = calculateMaxProgress();
         NotificationManager mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(this)
                         .setSmallIcon(android.R.drawable.stat_sys_download)
                         .setContentTitle(getString(R.string.crouton_harvesting))
-                        .setProgress(maxProgress, progress, false);
+                        .setProgress(maxProgress, 0, false);
         mNotifyManager.notify(123, builder.build());
 
         // go trough all zoom levels
-        for (int z = tileJson.getMinzoom().intValue(); z <= tileJson.getMaxzoom().intValue(); z++) {
+        int numberOfTiles = 0;
+        for (int z = mTileJson.getMinzoom().intValue(); z <= mTileJson.getMaxzoom().intValue(); z++) {
             // find the OSM coordinates of the bounding box
-            int[] topLeftCoordinates = getTileNumber(tileJson.getBounds().get(3).doubleValue(), tileJson.getBounds().get(0).doubleValue(), z);
-            int[] bottomRightCoordinates = getTileNumber(tileJson.getBounds().get(1).doubleValue(), tileJson.getBounds().get(2).doubleValue(), z);
+            int[] topLeftCoordinates = getTileNumber(mTileJson.getBounds().get(3).doubleValue(), mTileJson.getBounds().get(0).doubleValue(), z);
+            int[] bottomRightCoordinates = getTileNumber(mTileJson.getBounds().get(1).doubleValue(), mTileJson.getBounds().get(2).doubleValue(), z);
 
             int startX = topLeftCoordinates[1];
             int endX = bottomRightCoordinates[1];
@@ -83,66 +83,42 @@ public class HarvesterService extends IntentService {
             // harvest individual files for specific zoom level
             for (int x = startX; x <= endX; x++)
                 for (int y = startY; y <= endY; y++) {
-                    // get the tile url
-                    String tilesUrl = tileJson.getTiles().get(new Random().nextInt(tileJson.getTiles().size())).toString();
-                    tilesUrl = tilesUrl.replace("{z}", "" + z).replace("{x}", "" + x).replace("{y}", "" + y);
+                    // change the notification text
+                    builder.setContentTitle(++numberOfTiles + " tiles harvested");
+                    builder.setContentText("../" + z + "/" + x + "/" + y + ".png");
+                    builder.setProgress(maxProgress, numberOfTiles, false);
+                    mNotifyManager.notify(123, builder.build());
 
                     // check if a tile exists
-                    byte[] tileData = getTileBytes(z, x, y, tileJson);
+                    byte[] tileData = getTileBytes(z, x, y, mTileJson);
                     if (tileData == null)
                         continue;
 
-                    // change the notification text
-                    builder.setContentText("../" + z + "/" + x + "/" + y + ".png");
-                    mNotifyManager.notify(123, builder.build());
-
                     // add for batch insert
                     String tile_id = UUID.nameUUIDFromBytes(tileData).toString();
-
-                    String[] projection = new String[]{TilesContract.COLUMN_TILE_ID};
-                    String selection = TilesContract.COLUMN_TILE_ID + " = ?";
-                    String[] selectionParams = new String[]{tile_id};
-
-                    // only insert if we don't have the tile
-                    // this will prevent adding redundant tiles like blue ocean tile
-                    Cursor cursor = mDatabase.query(TilesContract.TABLE_IMAGES, projection, selection, selectionParams, null, null, null);
-                    if (cursor.getCount() == 0) {
-                        // insert into separate tables
-                        ContentValues values = new ContentValues();
-                        values.put(TilesContract.COLUMN_TILE_ID, tile_id);
-                        values.put(TilesContract.COLUMN_TILE_DATA, tileData);
-                        mImageValues.add(values);
-                        // make batch insert for every 50 tiles
-                        if (mImageValues.size() > 50) {
-                            batchInsertImages(mImageValues);
-                            mImageValues.clear();
-                        }
+                    // insert into separate tables
+                    ContentValues values = new ContentValues();
+                    values.put(TilesContract.COLUMN_TILE_ID, tile_id);
+                    values.put(TilesContract.COLUMN_TILE_DATA, tileData);
+                    mImageValues.add(values);
+                    // make batch insert for every 50 tiles
+                    if (mImageValues.size() > 50) {
+                        batchInsertImages(mImageValues);
+                        mImageValues.clear();
                     }
 
-                    selection = TilesContract.COLUMN_ZOOM_LEVEL + " = ? AND "
-                            + TilesContract.COLUMN_TILE_COLUMN + "= ? AND "
-                            + TilesContract.COLUMN_TILE_ROW + "= ?";
-                    selectionParams = new String[]{String.valueOf(z), String.valueOf(x), String.valueOf((int) (Math.pow(2, z) - y - 1))};
-
-                    // only insert if we don't have the tile
-                    cursor = mDatabase.query(TilesContract.TABLE_MAP, projection, selection, selectionParams, null, null, null);
-                    if (cursor.getCount() == 0) {
-                        ContentValues values = new ContentValues();
-                        values.put(TilesContract.COLUMN_ZOOM_LEVEL, z);
-                        values.put(TilesContract.COLUMN_TILE_COLUMN, x);
-                        values.put(TilesContract.COLUMN_TILE_ROW, String.valueOf((int) (Math.pow(2, z) - y - 1)));
-                        values.put(TilesContract.COLUMN_TILE_ID, tile_id);
-                        mMapValues.add(values);
-                        // make batch insert for every 50 tiles
-                        if (mMapValues.size() > 50) {
-                            batchInsertMap(mMapValues);
-                            mMapValues.clear();
-                        }
+                    values = new ContentValues();
+                    values.put(TilesContract.COLUMN_ZOOM_LEVEL, z);
+                    values.put(TilesContract.COLUMN_TILE_COLUMN, x);
+                    values.put(TilesContract.COLUMN_TILE_ROW, String.valueOf((int) (Math.pow(2, z) - y - 1)));
+                    values.put(TilesContract.COLUMN_TILE_ID, tile_id);
+                    mMapValues.add(values);
+                    // make batch insert for every 50 tiles
+                    if (mMapValues.size() > 50) {
+                        batchInsertMap(mMapValues);
+                        mMapValues.clear();
                     }
                 }
-
-            builder.setProgress(maxProgress, ++progress, false);
-            mNotifyManager.notify(123, builder.build());
         }
         // insert the rest of the tiles
         batchInsertImages(mImageValues);
@@ -182,6 +158,25 @@ public class HarvesterService extends IntentService {
         mNotifyManager.notify(0, builder.build());
     }
 
+    private int calculateMaxProgress() {
+        int numberOfTiles = 0;
+        for (int z = mTileJson.getMinzoom().intValue(); z <= mTileJson.getMaxzoom().intValue(); z++) {
+            // find the OSM coordinates of the bounding box
+            int[] topLeftCoordinates = getTileNumber(mTileJson.getBounds().get(3).doubleValue(), mTileJson.getBounds().get(0).doubleValue(), z);
+            int[] bottomRightCoordinates = getTileNumber(mTileJson.getBounds().get(1).doubleValue(), mTileJson.getBounds().get(2).doubleValue(), z);
+
+            int startX = topLeftCoordinates[1];
+            int endX = bottomRightCoordinates[1];
+            int startY = topLeftCoordinates[2];
+            int endY = bottomRightCoordinates[2];
+            // harvest individual files for specific zoom level
+            for (int x = startX; x <= endX; x++)
+                for (int y = startY; y <= endY; y++)
+                    numberOfTiles++;
+        }
+        return numberOfTiles;
+    }
+
     private int[] getTileNumber(double lat, double lon, int zoom) {
         int xTile = (int) Math.floor((lon + 180) / 360 * (1 << zoom));
         int yTile = (int) Math.floor((1 - Math.log(Math.tan(Math.toRadians(lat)) + 1 / Math.cos(Math.toRadians(lat))) / Math.PI) / 2 * (1 << zoom));
@@ -211,6 +206,8 @@ public class HarvesterService extends IntentService {
             URL url = new URL(tilesUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setDoInput(true);
+            connection.setReadTimeout(1000);
+            connection.setConnectTimeout(1000);
             connection.connect();
             InputStream input = connection.getInputStream();
             // convert the primitive input stream to the wrapper class
