@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">andbtiles</string>
+    <string name="placeholder">Placeholder</string>
+
+    <string name="crouton_error">Error</string>
+    <string name="crouton_download_complete">Download complete</string>
+    <string name="crouton_downloading">Downloading file…</string>
+    <string name="crouton_harvesting">Harvesting tiles…</string>
+
+</resources>
