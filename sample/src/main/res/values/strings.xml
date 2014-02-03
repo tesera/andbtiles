@@ -20,7 +20,6 @@
     <string name="hint_cache">Full Cache\n(harvest all tiles)</string>
     <string name="hint_data_only">Data Only\n(cache only the .mbtiles data)</string>
     <string name="hint_browse_list">or select one from the list:</string>
-    <string name="hint_fetchng_data">Fetching data…</string>
     <string name="hint_url">Enter a URL to TileJSON or MBTiles file…</string>
     <string name="hint_url_error">Please enter a valid URL</string>
     <string name="hint_harvest_tiles_number" formatted="false">Harvest %d tiles?</string>
@@ -36,14 +35,8 @@
     <string name="crouton_database_error">Cannot save map, please select another file and try again.</string>
     <string name="crouton_map_added">Map successfully added.</string>
     <string name="crouton_fetch_error">No maps found. Please check your internet connection, enter a valid URL and try again.</string>
-    <string name="crouton_download_complete">Download complete</string>
-    <string name="crouton_map_exsists">Map already added.</string>
-    <string name="crouton_file_exists">File already exists on SD. Add to maps?</string>
-    <string name="crouton_downloading">Downloading file…</string>
-    <string name="crouton_harvesting">Harvesting tiles…</string>
-
-    <string name="dialog_title_local_provider">Add Local Provider</string>
-    <string name="dialog_message_local_provider" formatted="false">Use %s as a local provider?</string>
+    <string name="toast_download_complete">Download complete</string>
+    <string name="toast_harvesting">Harvesting tiles…</string>
 
     <string name="title_local_provider">New Local Provider</string>
     <string name="title_internet_provider">New Internet Provider</string>

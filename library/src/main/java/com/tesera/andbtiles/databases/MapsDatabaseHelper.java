@@ -4,7 +4,7 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-public class MapsDatabaseHelper extends SQLiteOpenHelper {
+class MapsDatabaseHelper extends SQLiteOpenHelper {
 
     // Database
     private static final String DATABASE_NAME = "maps.db";

@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -60,7 +59,7 @@ public class HarvesterService extends IntentService {
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(this)
                         .setSmallIcon(android.R.drawable.stat_sys_download)
-                        .setContentTitle(getString(R.string.crouton_harvesting))
+                        .setContentTitle(getString(R.string.toast_harvesting))
                         .setProgress(maxProgress, 0, false);
         mNotifyManager.notify(123, builder.build());
 
@@ -124,12 +123,7 @@ public class HarvesterService extends IntentService {
         mapItem.setSize(new File(mapItem.getPath()).length());
         // insert the file in the database
         MapsDatabase mapsDatabase = new MapsDatabase(this);
-        try {
-            mapsDatabase.open();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return;
-        }
+        mapsDatabase.open();
         mapsDatabase.insertItems(mapItem);
         mapsDatabase.close();
 
@@ -137,7 +131,7 @@ public class HarvesterService extends IntentService {
         builder =
                 new NotificationCompat.Builder(this)
                         .setSmallIcon(android.R.drawable.stat_sys_download_done)
-                        .setContentTitle(getString(R.string.crouton_download_complete))
+                        .setContentTitle(getString(R.string.toast_download_complete))
                         .setContentText(mapItem.getPath())
                         .setAutoCancel(true)
                         .setDefaults(Notification.DEFAULT_ALL);

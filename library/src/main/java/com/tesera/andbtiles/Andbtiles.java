@@ -35,7 +35,6 @@ import java.io.File;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,12 +43,26 @@ import java.util.Map;
 
 public class Andbtiles {
 
-    private Context mContext;
+    private final Context mContext;
 
+    /**
+     * Class constructor.
+     *
+     * @param context sets the application context
+     */
     public Andbtiles(Context context) {
         this.mContext = context;
     }
 
+    /**
+     * Returns all tha maps saved as providers.
+     * <p/>
+     * This method always returns immediately and returns a list of all MapItems
+     * saved in the database or null if there is none.
+     *
+     * @return list of saved MapItem objects or null if no map providers are added
+     * @see com.tesera.andbtiles.pojos.MapItem
+     */
     public List<MapItem> getMaps() {
         MapsDatabase mapsDatabase = new MapsDatabase(mContext);
         try {
@@ -80,12 +93,22 @@ public class Andbtiles {
         return mapsList;
     }
 
-    // TODO document method
+    /**
+     * Adds local .mbtiles file as map provider.
+     * The pathToMbTilesFile argument must specify an absolute path to a
+     * file on the external storage that has an .mbtiles file extension.
+     * <p/>
+     * This method always returns immediately or throws an exception if the file
+     * is not found on the storage system or the storage system is not mounted.
+     *
+     * @param pathToMbTilesFile an absolute path to the .mbtiles file on the storage system
+     * @throws com.tesera.andbtiles.exceptions.AndbtilesException
+     */
     public void addLocalMbTilesProvider(String pathToMbTilesFile) throws AndbtilesException {
         // try to find the file with the specified path
         File mbTilesFile = new File(pathToMbTilesFile);
         if (!mbTilesFile.exists())
-            throw new AndbtilesException("File not found: " + pathToMbTilesFile);
+            throw new AndbtilesException(String.format(mContext.getString(R.string.exception_file_not_found), pathToMbTilesFile));
 
         // create new map item for insertion
         MapItem mapItem = new MapItem();
@@ -97,44 +120,101 @@ public class Andbtiles {
         insertMapItem(mapItem);
     }
 
-    // TODO document method
+    /**
+     * Adds a remote .mbtiles file as map provider. The file is downloaded in the process.
+     * The urlToMbTilesFile argument must specify a valid URL to a
+     * file on the web that has an .mbtiles file extension.
+     * <p/>
+     * This method executes in a background thread and informs the main thread via the callback.
+     *
+     * @param urlToMbTilesFile an absolute URL to the .mbtiles file on the web
+     * @param callback         a callback for returning the background thread status
+     * @see com.tesera.andbtiles.callbacks.AndbtilesCallback
+     */
     public void addRemoteMbilesProvider(String urlToMbTilesFile, AndbtilesCallback callback) {
         // do a URL and extension check
         if (!urlToMbTilesFile.matches(Patterns.WEB_URL.pattern()) || !urlToMbTilesFile.endsWith(Consts.EXTENSION_MBTILES))
-            callback.onError(new AndbtilesException("Invalid URL to file: " + urlToMbTilesFile));
+            callback.onError(new AndbtilesException
+                    (String.format(mContext.getString(R.string.exception_invalid_url_mbtiles), urlToMbTilesFile)));
 
         downloadMbTilesFile(mContext, urlToMbTilesFile, callback);
     }
 
-    // TODO document method
+    /**
+     * Adds a remote map provider from a TileJSON endpoint.
+     * The urlToJsonTileEndpoint argument must specify a valid URL to a
+     * TileJSON endpoint on the web that has a map named like the mapName argument.
+     * The cache method must be specified as one of the following:
+     * <p/>
+     * Consts.CACHE_NO - the provider acts as simple proxy
+     * <br/>
+     * Consts.CACHE_ON_DEMAND - the provider caches only the requested tiles
+     * <br/>
+     * Consts.CACHE_FULL - all tiles are harvested
+     * <br/>
+     * Consts.CACHE_DATA_ONLY - only the private data (.mbtiles) is downloaded
+     * <p/>
+     * This method executes in a background thread and informs the main thread via the callback.
+     *
+     * @param urlToJsonTileEndpoint an absolute URL to the TileJSON endpoint on the web
+     * @param mapName               the name of a map that can be found at the endpoint
+     * @param cacheMethod           one of the available cache methods
+     * @param callback              a callback for returning the background thread status
+     * @see com.tesera.andbtiles.utils.Consts
+     * @see com.tesera.andbtiles.callbacks.AndbtilesCallback
+     */
     public void addRemoteJsonTileProvider(String urlToJsonTileEndpoint, String mapName, int cacheMethod, AndbtilesCallback callback) {
         // do a URL and extension check
         if (!urlToJsonTileEndpoint.matches(Patterns.WEB_URL.pattern()) || !urlToJsonTileEndpoint.endsWith(Consts.EXTENSION_JSON))
-            callback.onError(new AndbtilesException("Invalid URL to file: " + urlToJsonTileEndpoint));
+            callback.onError(new AndbtilesException(
+                    String.format(mContext.getString(R.string.exception_invalid_url_jsontile), urlToJsonTileEndpoint)));
 
         ProcessTileJson task = new ProcessTileJson(callback);
         task.execute(urlToJsonTileEndpoint, mapName, "" + cacheMethod);
     }
 
-    // TODO document method
+    /**
+     * Adds a remote map provider from a TileJSON endpoint.
+     * The urlToJsonTileEndpoint argument must specify a valid URL to a
+     * TileJSON endpoint on the web that has a map named like the mapName argument.
+     * The cache method must be specified as one of the following:
+     * <p/>
+     * Consts.CACHE_NO - the provider acts as simple proxy
+     * <br/>
+     * Consts.CACHE_ON_DEMAND - the provider caches only the requested tiles
+     * <br/>
+     * Consts.CACHE_FULL - all tiles are harvested
+     * <br/>
+     * Consts.CACHE_DATA_ONLY - only the private data (.mbtiles) is downloaded
+     * <p/>
+     * The minZoom and maxZoom arguments are only taken into consideration when
+     * CACHE_FULL is selected for caching.
+     * This method executes in a background thread and informs the main thread via the callback.
+     *
+     * @param urlToJsonTileEndpoint an absolute URL to the TileJSON endpoint on the web
+     * @param mapName               the name of a map that can be found at the endpoint
+     * @param cacheMethod           one of the available cache methods
+     * @param minZoom               the minimum zoom as a harvest start point
+     * @param maxZoom               the maximum zoom as a harvest endpoint
+     * @param callback              a callback for returning the background thread status
+     * @see com.tesera.andbtiles.utils.Consts
+     * @see com.tesera.andbtiles.callbacks.AndbtilesCallback
+     */
     public void addRemoteJsonTileProvider(String urlToJsonTileEndpoint, String mapName, int cacheMethod, int minZoom, int maxZoom, AndbtilesCallback callback) {
         // do a URL and extension check
         if (!urlToJsonTileEndpoint.matches(Patterns.WEB_URL.pattern()) || !urlToJsonTileEndpoint.endsWith(Consts.EXTENSION_JSON))
-            callback.onError(new AndbtilesException("Invalid URL to file: " + urlToJsonTileEndpoint));
+            callback.onError(new AndbtilesException(
+                    String.format(mContext.getString(R.string.exception_invalid_url_jsontile), urlToJsonTileEndpoint)));
 
         ProcessTileJson task = new ProcessTileJson(callback);
         task.execute(urlToJsonTileEndpoint, mapName, "" + cacheMethod, "" + minZoom, "" + maxZoom);
     }
 
     // helper function for inserting map items into the database
-    private void insertMapItem(MapItem mapItem) throws AndbtilesException {
+    private void insertMapItem(MapItem mapItem) {
         // insert the file in the database
         MapsDatabase mapsDatabase = new MapsDatabase(mContext);
-        try {
-            mapsDatabase.open();
-        } catch (SQLException e) {
-            throw new AndbtilesException(e.getMessage());
-        }
+        mapsDatabase.open();
         mapsDatabase.insertItems(mapItem);
         mapsDatabase.close();
     }
@@ -195,7 +275,8 @@ public class Andbtiles {
                         }
 
                     } else
-                        callback.onError(new AndbtilesException("Cannot download " + urlToFile));
+                        callback.onError(new AndbtilesException(
+                                String.format(mContext.getString(R.string.exception_download_error), urlToFile)));
                 }
                 // unregister the receiver since the download is done
                 context.unregisterReceiver(this);
@@ -208,7 +289,7 @@ public class Andbtiles {
     // helper class for processing maps obtained from TileJSON endpoint
     private class ProcessTileJson extends AsyncTask<String, Void, String> {
 
-        private AndbtilesCallback mCallback;
+        private final AndbtilesCallback mCallback;
 
         private ProcessTileJson(AndbtilesCallback callback) {
             this.mCallback = callback;
@@ -310,15 +391,11 @@ public class Andbtiles {
             super.onPostExecute(error);
         }
 
-        private void insertMetadata(MapItem mapItem) throws AndbtilesException {
+        private void insertMetadata(MapItem mapItem) {
 
             MBTilesDatabase mbTilesDatabase = new MBTilesDatabase(mContext, mapItem.getPath());
-            try {
-                mbTilesDatabase.open();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                throw new AndbtilesException(e.getMessage());
-            }
+            mbTilesDatabase.open();
+
             // fill the metadata table
             TileJson tileJson = new Gson().fromJson(mapItem.getJsonData(), TileJson.class);
             Map<String, String> metadataMap = new HashMap<>();

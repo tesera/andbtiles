@@ -11,7 +11,7 @@ import java.util.List;
 
 public class MapsDatabaseLoader extends AsyncTaskLoader<List<MapItem>> {
 
-    private Andbtiles andbtiles;
+    private final Andbtiles andbtiles;
     private List<MapItem> mapsList;
 
     public MapsDatabaseLoader(Context context) {

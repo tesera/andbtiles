@@ -12,8 +12,8 @@ import com.tesera.andbtiles.utils.TilesContract;
 
 public class MBTilesProvider implements TileProvider {
 
-    private Context mContext;
-    private String mContentProviderPath;
+    private final Context mContext;
+    private final String mContentProviderPath;
 
     public MBTilesProvider(Context context, String path) {
         mContext = context;

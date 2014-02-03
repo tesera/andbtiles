@@ -21,7 +21,7 @@ import com.tesera.andbtiles.sample.callbacks.ActivityCallback;
 import com.tesera.andbtiles.sample.utils.Consts;
 
 
-public class CacheSettingsFragment extends Fragment {
+class CacheSettingsFragment extends Fragment {
 
     private MapItem mMapItem;
     private RadioGroup mCacheGroup;
@@ -59,7 +59,7 @@ public class CacheSettingsFragment extends Fragment {
         unselectFile();
     }
 
-    public void selectFile() {
+    void selectFile() {
         View actionBarButtons = getActivity().getLayoutInflater().inflate(R.layout.action_bar_custom_confirm, new LinearLayout(getActivity()), false);
 
         View cancelActionView = actionBarButtons.findViewById(R.id.action_cancel);

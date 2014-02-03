@@ -20,9 +20,9 @@ import java.util.List;
 
 public class MBTilesAdapter extends BaseAdapter implements Filterable {
 
-    private Context mContext;
+    private final Context mContext;
     private List<File> mFiles;
-    private List<File> mFilesOriginal;
+    private final List<File> mFilesOriginal;
 
     public MBTilesAdapter(Context mContext, List<File> mFiles) {
         this.mContext = mContext;
@@ -89,7 +89,7 @@ public class MBTilesAdapter extends BaseAdapter implements Filterable {
             }
 
             private List<File> getFilteredResults(CharSequence constraint) {
-                List<File> filteredList = new ArrayList<File>();
+                List<File> filteredList = new ArrayList<>();
                 // always use the original adapter list when filtering
                 if (mFilesOriginal == null)
                     return null;

@@ -4,9 +4,12 @@
     <string name="app_name">andbtiles</string>
     <string name="placeholder">Placeholder</string>
 
-    <string name="crouton_error">Error</string>
-    <string name="crouton_download_complete">Download complete</string>
-    <string name="crouton_downloading">Downloading file…</string>
-    <string name="crouton_harvesting">Harvesting tiles…</string>
+    <string name="toast_download_complete">Download complete</string>
+    <string name="toast_harvesting">Harvesting tiles…</string>
+
+    <string name="exception_file_not_found" formatted="false">File not found: %s</string>
+    <string name="exception_invalid_url_mbtiles" formatted="false">Invalid URL to .mbtiles file: %s</string>
+    <string name="exception_invalid_url_jsontile" formatted="false">Invalid URL to JsonTILE endpoint: %s</string>
+    <string name="exception_download_error" formatted="false">Cannot download %s</string>
 
 </resources>

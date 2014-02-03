@@ -74,7 +74,7 @@ public class MapsFragment extends Fragment implements LoaderManager.LoaderCallba
         MainActivity activity = (MainActivity) getActivity();
         if (activity.isDatabaseChanged()) {
             getLoaderManager().restartLoader(0, null, this);
-            activity.setDatabaseChanged(false);
+            activity.setDatabaseChanged();
         }
         super.onResume();
     }

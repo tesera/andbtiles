@@ -23,7 +23,6 @@ import org.apache.commons.io.IOUtils;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,12 +47,8 @@ public class TilesContentProvider extends ContentProvider {
 
         mDatabase = null;
         mMapsDatabase = new MapsDatabase(getContext());
-        try {
-            mMapsDatabase.open();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+        mMapsDatabase.open();
+
         return true;
     }
 
@@ -76,7 +71,7 @@ public class TilesContentProvider extends ContentProvider {
         // handle tile request
         switch (mapItem.getCacheMode()) {
             case Consts.CACHE_NO:
-                if(!isNetworkConnected())
+                if (!isNetworkConnected())
                     return null;
                 // since there is no caching there is no metadata
                 // parse the TileJSON response instead
@@ -109,7 +104,7 @@ public class TilesContentProvider extends ContentProvider {
                 if (cursor != null && cursor.getCount() > 0)
                     return cursor;
 
-                if(!isNetworkConnected())
+                if (!isNetworkConnected())
                     return null;
                 // fetch tile from the web
                 z = Integer.parseInt(selectionArgs[0]);

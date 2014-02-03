@@ -9,15 +9,13 @@ import android.database.sqlite.SQLiteStatement;
 
 import com.tesera.andbtiles.pojos.MapItem;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MapsDatabase {
 
-    private SQLiteDatabase database;
-    private MapsDatabaseHelper dbHelper;
-    private String[] allColumns = {
+    private final MapsDatabaseHelper dbHelper;
+    private final String[] allColumns = {
             MapsDatabaseHelper.COLUMN_ID,
             MapsDatabaseHelper.COLUMN_NAME,
             MapsDatabaseHelper.COLUMN_PATH,
@@ -25,12 +23,13 @@ public class MapsDatabase {
             MapsDatabaseHelper.COLUMN_SIZE,
             MapsDatabaseHelper.COLUMN_JSON_DATA
     };
+    private SQLiteDatabase database;
 
     public MapsDatabase(Context context) {
         dbHelper = new MapsDatabaseHelper(context);
     }
 
-    public void open() throws SQLException {
+    public void open() {
         database = dbHelper.getWritableDatabase();
     }
 

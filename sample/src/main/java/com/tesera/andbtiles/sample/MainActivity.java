@@ -31,7 +31,7 @@ public class MainActivity extends Activity implements ActivityCallback {
         return isDatabaseChanged;
     }
 
-    public void setDatabaseChanged(boolean isDatabaseChanged) {
-        this.isDatabaseChanged = isDatabaseChanged;
+    public void setDatabaseChanged() {
+        this.isDatabaseChanged = false;
     }
 }

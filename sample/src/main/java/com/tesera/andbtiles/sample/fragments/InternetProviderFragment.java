@@ -49,7 +49,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InternetProviderFragment extends Fragment {
+class InternetProviderFragment extends Fragment {
 
     private Button mFetch;
     private EditText mUrl;
@@ -85,7 +85,7 @@ public class InternetProviderFragment extends Fragment {
                 MapItem mapItem = (MapItem) parent.getAdapter().getItem(position);
                 // this is a url to a .mbtiles file
                 if (mapItem.getJsonData() == null)
-                    selectFile(null);
+                    selectFile();
                     // this is a map from TileJSON so advance to cache options screen
                 else {
                     Bundle args = new Bundle();
@@ -107,7 +107,7 @@ public class InternetProviderFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 // validate the url
-                if (!validate())
+                if (!isValid())
                     mUrl.setError(getString(R.string.hint_url_error));
 
                 // hide the keyboard and execute the fetch
@@ -172,19 +172,17 @@ public class InternetProviderFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
-    private boolean validate() {
+    private boolean isValid() {
         mDownloadPath = mUrl.getText().toString();
         return (mDownloadPath.endsWith(Consts.EXTENSION_MBTILES) || mDownloadPath.endsWith(Consts.EXTENSION_JSON))
                 && mDownloadPath.matches(Patterns.WEB_URL.pattern());
     }
 
-    private void selectFile(final MapItem mapItem) {
+    private void selectFile() {
 
         View actionBarButtons;
-        if (mapItem == null)
-            actionBarButtons = getActivity().getLayoutInflater().inflate(R.layout.action_bar_custom_download, new LinearLayout(getActivity()), false);
-        else
-            actionBarButtons = getActivity().getLayoutInflater().inflate(R.layout.action_bar_custom_confirm, new LinearLayout(getActivity()), false);
+        actionBarButtons = getActivity().getLayoutInflater().inflate(R.layout.action_bar_custom_download, new LinearLayout(getActivity()), false);
+
 
         View cancelActionView = actionBarButtons.findViewById(R.id.action_cancel);
         cancelActionView.setOnClickListener(new View.OnClickListener() {

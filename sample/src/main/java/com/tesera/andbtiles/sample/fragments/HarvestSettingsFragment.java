@@ -20,7 +20,7 @@ import com.tesera.andbtiles.pojos.TileJson;
 import com.tesera.andbtiles.sample.R;
 import com.tesera.andbtiles.sample.utils.Consts;
 
-public class HarvestSettingsFragment extends Fragment {
+class HarvestSettingsFragment extends Fragment {
 
     private TextView mMinZoom;
     private TextView mMaxZoom;
@@ -76,10 +76,10 @@ public class HarvestSettingsFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        getActivity().getActionBar().setTitle(R.string.title_cache_settings);
+        getActivity().getActionBar().setTitle(R.string.title_harvest_settings);
     }
 
-    public void selectFile() {
+    void selectFile() {
         View actionBarButtons = getActivity().getLayoutInflater().inflate(R.layout.action_bar_custom_confirm, new LinearLayout(getActivity()), false);
 
         View cancelActionView = actionBarButtons.findViewById(R.id.action_cancel);
@@ -111,7 +111,7 @@ public class HarvestSettingsFragment extends Fragment {
                     }
                 });
 
-                Toast.makeText(getActivity(), getString(R.string.crouton_harvesting), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), getString(R.string.toast_harvesting), Toast.LENGTH_SHORT).show();
                 getFragmentManager().popBackStack();
                 getFragmentManager().popBackStack();
                 getFragmentManager().popBackStack();

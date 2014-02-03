@@ -6,28 +6,19 @@ import android.database.sqlite.SQLiteStatement;
 
 import com.tesera.andbtiles.utils.TilesContract;
 
-import java.sql.SQLException;
 import java.util.Map;
 
 
 public class MBTilesDatabase {
 
+    private final MBTilesDatabaseHelper dbHelper;
     private SQLiteDatabase database;
-    private MBTilesDatabaseHelper dbHelper;
-    private String[] allColumns = {
-            MapsDatabaseHelper.COLUMN_ID,
-            MapsDatabaseHelper.COLUMN_NAME,
-            MapsDatabaseHelper.COLUMN_PATH,
-            MapsDatabaseHelper.COLUMN_CACHE_MODE,
-            MapsDatabaseHelper.COLUMN_SIZE,
-            MapsDatabaseHelper.COLUMN_JSON_DATA
-    };
 
     public MBTilesDatabase(Context context, String path) {
         dbHelper = new MBTilesDatabaseHelper(context, path);
     }
 
-    public void open() throws SQLException {
+    public void open() {
         database = dbHelper.getWritableDatabase();
     }
 

@@ -20,9 +20,9 @@ import java.util.List;
 
 public class MapsAdapter extends BaseAdapter implements Filterable {
 
-    private Context mContext;
+    private final Context mContext;
     private List<MapItem> mMaps;
-    private List<MapItem> mMapsOriginal;
+    private final List<MapItem> mMapsOriginal;
 
     public MapsAdapter(Context mContext, List<MapItem> mMaps) {
         this.mContext = mContext;
@@ -90,7 +90,7 @@ public class MapsAdapter extends BaseAdapter implements Filterable {
             }
 
             private List<MapItem> getFilteredResults(CharSequence constraint) {
-                List<MapItem> filteredList = new ArrayList<MapItem>();
+                List<MapItem> filteredList = new ArrayList<>();
                 // always use the original adapter list when filtering
                 if (mMapsOriginal == null)
                     return null;

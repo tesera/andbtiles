@@ -4,9 +4,6 @@ package com.tesera.andbtiles.sample.utils;
 import android.content.Context;
 import android.os.Environment;
 
-import com.tesera.andbtiles.databases.MapsDatabase;
-import com.tesera.andbtiles.pojos.MapItem;
-
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
