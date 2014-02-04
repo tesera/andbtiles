@@ -210,6 +210,44 @@ public class Andbtiles {
         task.execute(urlToJsonTileEndpoint, mapName, "" + cacheMethod, "" + minZoom, "" + maxZoom);
     }
 
+    /**
+     * Deletes a map provider from the database.
+     * The mapForDeletion argument must have a valid name as a map identifier.
+     * <p/>
+     * This method always returns immediately.
+     *
+     * @param mapForDeletion MapItem object with name specified for deletion
+     * @return true if the deletion was successful, false otherwise
+     */
+    public boolean deleteMap(MapItem mapForDeletion) {
+        MapsDatabase mapsDatabase = new MapsDatabase(mContext);
+        try {
+            mapsDatabase.open();
+        } catch (Exception e) {
+            return false;
+        }
+        return mapsDatabase.deleteItem(mapForDeletion);
+    }
+
+    /**
+     * Updates a map provider from the database.
+     * The mapForDeletion argument must have a valid name in order to update the other values.
+     * <p/>
+     * This method always returns immediately.
+     *
+     * @param mapForUpdate MapItem object with the parameters that need to be updated
+     * @return true if the update was successful, false otherwise
+     */
+    public boolean updateMap(MapItem mapForUpdate) {
+        MapsDatabase mapsDatabase = new MapsDatabase(mContext);
+        try {
+            mapsDatabase.open();
+        } catch (Exception e) {
+            return false;
+        }
+        return mapsDatabase.updateItem(mapForUpdate);
+    }
+
     // helper function for inserting map items into the database
     private void insertMapItem(MapItem mapItem) {
         // insert the file in the database

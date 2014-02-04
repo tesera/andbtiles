@@ -8,6 +8,8 @@
     <string name="action_local">Local</string>
     <string name="action_internet">From the Internet</string>
     <string name="action_filter">Filter results…</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_delete">Delete</string>
 
     <string name="hint_no_maps">No saved maps.</string>
     <string name="hint_no_maps_tap">Tap</string>
@@ -23,6 +25,8 @@
     <string name="hint_url">Enter a URL to TileJSON or MBTiles file…</string>
     <string name="hint_url_error">Please enter a valid URL</string>
     <string name="hint_harvest_tiles_number" formatted="false">Harvest %d tiles?</string>
+    <string name="hint_map_delete_title">Delete map?</string>
+    <string name="hint_map_delete_message">The map will be removed from the database and the provider.\nThe .mbtiles files on the external storage won\'t be affected.</string>
 
     <string name="btn_browse">Browse…</string>
     <string name="btn_cancel">Cancel</string>
@@ -34,6 +38,7 @@
     <string name="crouton_invalid_file">Please select a valid map.</string>
     <string name="crouton_database_error">Cannot save map, please select another file and try again.</string>
     <string name="crouton_map_added">Map successfully added.</string>
+    <string name="crouton_map_deleted">Map successfully deleted.</string>
     <string name="crouton_fetch_error">No maps found. Please check your internet connection, enter a valid URL and try again.</string>
     <string name="toast_download_complete">Download complete</string>
     <string name="toast_harvesting">Harvesting tiles…</string>
