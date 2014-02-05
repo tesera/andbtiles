@@ -431,6 +431,15 @@ public class Andbtiles {
 
         private void insertMetadata(MapItem mapItem) {
 
+            // delete previous database because conflicts occur
+            File database = new File(mapItem.getPath());
+            if (database.exists())
+                database.delete();
+
+            database = new File(mapItem.getPath() + "-journal");
+            if (database.exists())
+                database.delete();
+
             MBTilesDatabase mbTilesDatabase = new MBTilesDatabase(mContext, mapItem.getPath());
             mbTilesDatabase.open();
 
