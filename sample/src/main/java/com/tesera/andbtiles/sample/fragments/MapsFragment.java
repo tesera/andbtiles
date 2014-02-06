@@ -49,7 +49,7 @@ public class MapsFragment extends Fragment implements LoaderManager.LoaderCallba
 
                 Intent mapIntent = new Intent(getActivity(), MapActivity.class);
                 mapIntent.putExtra(Consts.EXTRA_PATH, mapItem.getPath());
-                mapIntent.putExtra(Consts.EXTRA_NAME, mapItem.getName());
+                mapIntent.putExtra(Consts.EXTRA_NAME, mapItem.getId());
                 startActivity(mapIntent);
             }
         });

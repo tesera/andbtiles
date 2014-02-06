@@ -58,12 +58,19 @@ public class TilesContentProvider extends ContentProvider {
         if (!uri.toString().startsWith(TilesContract.CONTENT_URI))
             throw new UnsupportedOperationException("Content URI not recognized.");
 
-        String databaseName = uri.getPathSegments().get(uri.getPathSegments().size() - 2);
+        String databaseId = uri.getPathSegments().get(uri.getPathSegments().size() - 2);
         String tableName = uri.getLastPathSegment();
 
-        MapItem mapItem = mMapsDatabase.findMapByDatabaseName(databaseName);
-        if (mapItem == null)
-            throw new IllegalArgumentException("Map <" + uri.getLastPathSegment() + "> not found in maps.");
+        MapItem mapItem = mMapsDatabase.findMapById(databaseId);
+        if (mapItem == null) {
+            // try a local file instead since
+            // the remote files have ids like <user>.<mapname>
+            // the remote files have ids like <mapname>.mbtiles
+            databaseId = databaseId.split("/.")[1] + ".mbtiles";
+            mapItem = mMapsDatabase.findMapById(databaseId);
+            if (mapItem == null)
+                throw new IllegalArgumentException("Map <" + databaseId + "> with not found in maps.");
+        }
 
         if (mDatabase == null)
             mDatabase = SQLiteDatabase.openOrCreateDatabase(mapItem.getPath(), null);
@@ -194,7 +201,6 @@ public class TilesContentProvider extends ContentProvider {
                 statement.execute();
             } catch (Exception e) {
                 // this is a non-unique tile_id
-                e.printStackTrace();
             }
         }
         mDatabase.setTransactionSuccessful();
@@ -215,7 +221,6 @@ public class TilesContentProvider extends ContentProvider {
                 statement.execute();
             } catch (Exception e) {
                 // this is a non-unique tile_id
-                e.printStackTrace();
             }
         }
         mDatabase.setTransactionSuccessful();

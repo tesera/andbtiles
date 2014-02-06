@@ -112,6 +112,7 @@ public class Andbtiles {
 
         // create new map item for insertion
         MapItem mapItem = new MapItem();
+        mapItem.setId(mbTilesFile.getName());
         mapItem.setPath(mbTilesFile.getAbsolutePath());
         mapItem.setName(mbTilesFile.getName());
         mapItem.setCacheMode(Consts.CACHE_DATA);
@@ -292,6 +293,7 @@ public class Andbtiles {
 
                             // create new map item
                             MapItem mapItem = new MapItem();
+                            mapItem.setId(mbTilesFile.getName());
                             mapItem.setPath(mbTilesFile.getAbsolutePath());
                             mapItem.setName(mbTilesFile.getName());
                             mapItem.setCacheMode(Consts.CACHE_DATA);
@@ -365,6 +367,7 @@ public class Andbtiles {
                     if (tileJson.getName().equalsIgnoreCase(params[1])) {
 
                         MapItem mapItem = new MapItem();
+                        mapItem.setId(tileJson.getId());
                         mapItem.setName(tileJson.getName());
                         mapItem.setCacheMode(Integer.parseInt(params[2]));
                         mapItem.setPath(tileJson.getDownload());

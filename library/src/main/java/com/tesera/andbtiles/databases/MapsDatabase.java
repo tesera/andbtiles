@@ -38,13 +38,13 @@ public class MapsDatabase {
     }
 
     public boolean deleteItem(MapItem item) {
-        int result = database.delete(MapsDatabaseHelper.TABLE_MAPS, MapsDatabaseHelper.COLUMN_NAME + " like '" + item.getName() + "'", null);
+        int result = database.delete(MapsDatabaseHelper.TABLE_MAPS, MapsDatabaseHelper.COLUMN_ID + " like '" + item.getId() + "'", null);
         return result != 0;
     }
 
     public void deleteItems(List<MapItem> items) {
         for (MapItem item : items)
-            database.delete(MapsDatabaseHelper.TABLE_MAPS, MapsDatabaseHelper.COLUMN_NAME + " like '" + item.getName() + "'", null);
+            database.delete(MapsDatabaseHelper.TABLE_MAPS, MapsDatabaseHelper.COLUMN_ID + " like '" + item.getId() + "'", null);
     }
 
     public void insertItems(MapItem... items) {
@@ -53,6 +53,7 @@ public class MapsDatabase {
         database.beginTransaction();
         for (MapItem item : items) {
             statement.clearBindings();
+            statement.bindString(1, item.getId());
             statement.bindString(2, item.getName());
             statement.bindString(3, item.getPath() == null ? "" : item.getPath());
             statement.bindLong(4, item.getCacheMode());
@@ -72,12 +73,13 @@ public class MapsDatabase {
 
     public boolean updateItem(MapItem item) {
         ContentValues args = new ContentValues();
+        args.put(MapsDatabaseHelper.COLUMN_ID, item.getId());
         args.put(MapsDatabaseHelper.COLUMN_NAME, item.getName());
         args.put(MapsDatabaseHelper.COLUMN_PATH, item.getPath());
         args.put(MapsDatabaseHelper.COLUMN_CACHE_MODE, item.getCacheMode());
         args.put(MapsDatabaseHelper.COLUMN_SIZE, item.getSize());
         args.put(MapsDatabaseHelper.COLUMN_JSON_DATA, item.getJsonData());
-        int result = database.update(MapsDatabaseHelper.TABLE_MAPS, args, MapsDatabaseHelper.COLUMN_NAME + " like '" + item.getName() + "'", null);
+        int result = database.update(MapsDatabaseHelper.TABLE_MAPS, args, MapsDatabaseHelper.COLUMN_ID + " like '" + item.getId() + "'", null);
         return result != 0;
     }
 
@@ -95,9 +97,9 @@ public class MapsDatabase {
         return comments;
     }
 
-    public MapItem findMapByDatabaseName(String databaseName) {
+    public MapItem findMapById(String databaseId) {
         Cursor cursor = database.query(MapsDatabaseHelper.TABLE_MAPS, allColumns,
-                MapsDatabaseHelper.COLUMN_NAME + " like '" + databaseName + "'", null, null, null, null);
+                MapsDatabaseHelper.COLUMN_ID + " like '" + databaseId + "'", null, null, null, null);
         MapItem mapItem = null;
         if (cursor.moveToNext())
             mapItem = cursorToMapItem(cursor);
@@ -107,6 +109,7 @@ public class MapsDatabase {
 
     private MapItem cursorToMapItem(Cursor cursor) {
         MapItem mapItem = new MapItem();
+        mapItem.setId(cursor.getString(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_ID)));
         mapItem.setName(cursor.getString(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_NAME)));
         mapItem.setPath(cursor.getString(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_PATH)));
         mapItem.setCacheMode(cursor.getInt(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_CACHE_MODE)));

@@ -3,11 +3,20 @@ package com.tesera.andbtiles.pojos;
 
 public class MapItem {
 
+    private String id;
     private String path;
     private String name;
     private int cacheMode;
     private long size;
     private String jsonData;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getPath() {
         return path;
