@@ -190,7 +190,12 @@ public class TilesContentProvider extends ContentProvider {
             statement.clearBindings();
             statement.bindBlob(1, cValue.getAsByteArray(TilesContract.COLUMN_TILE_DATA));
             statement.bindString(2, cValue.getAsString(TilesContract.COLUMN_TILE_ID));
-            statement.execute();
+            try {
+                statement.execute();
+            } catch (Exception e) {
+                // this is a non-unique tile_id
+                e.printStackTrace();
+            }
         }
         mDatabase.setTransactionSuccessful();
         mDatabase.endTransaction();
@@ -206,7 +211,12 @@ public class TilesContentProvider extends ContentProvider {
             statement.bindLong(2, cValue.getAsLong(TilesContract.COLUMN_TILE_COLUMN));
             statement.bindLong(3, cValue.getAsLong(TilesContract.COLUMN_TILE_ROW));
             statement.bindString(4, cValue.getAsString(TilesContract.COLUMN_TILE_ID));
-            statement.execute();
+            try {
+                statement.execute();
+            } catch (Exception e) {
+                // this is a non-unique tile_id
+                e.printStackTrace();
+            }
         }
         mDatabase.setTransactionSuccessful();
         mDatabase.endTransaction();
