@@ -25,7 +25,7 @@ _content://com.tesera.andbtiles.provider/{map_name}/tiles
 
 ## Usage and Integration
 See the Quick Start guides for more information on how to achieve a simple integration:
-* [Quick Start](https://github.com/tesera/andbtiles/wiki/Quick-Start-Guide) for API v8 and above. 
+* [Quick Start](https://github.com/tesera/andbtiles/wiki/Quick-Start-Guide) for API v9 and above. 
 
 ## Sample application 
 Check out the [sample application](https://github.com/tesera/andbtiles/tree/master/sample) that builds UI on top of the library providing means for local file selection, remote file download, TileJSON endpoint parsing, cache method selection and map preview.  
