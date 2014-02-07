@@ -376,7 +376,7 @@ public class Andbtiles {
 
                         // create a local path for database
                         String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
-                                + Consts.FOLDER_ROOT + File.separator + mapItem.getName() + "." + Consts.EXTENSION_MBTILES;
+                                + Consts.FOLDER_ROOT + File.separator + mapItem.getId() + "." + Consts.EXTENSION_MBTILES;
 
                         switch (Integer.parseInt(params[2])) {
                             case Consts.CACHE_NO:
