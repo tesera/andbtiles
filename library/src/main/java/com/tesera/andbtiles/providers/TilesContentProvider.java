@@ -23,27 +23,22 @@ import org.apache.commons.io.IOUtils;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class TilesContentProvider extends ContentProvider {
 
     private SQLiteDatabase mDatabase;
     private MapsDatabase mMapsDatabase;
-
+    private ExecutorService mExecutorService;
     private Gson mGson;
-
-    private List<ContentValues> mMapValues;
-    private List<ContentValues> mImageValues;
 
     @Override
     public boolean onCreate() {
-
-        mMapValues = new ArrayList<>();
-        mImageValues = new ArrayList<>();
         mGson = new Gson();
+        mExecutorService = Executors.newSingleThreadExecutor();
 
         mDatabase = null;
         mMapsDatabase = new MapsDatabase(getContext());
@@ -126,56 +121,29 @@ public class TilesContentProvider extends ContentProvider {
                 final int xFinal = x;
                 final int yFinal = y;
 
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        // save to database in worker thread
-                        // the operation can be quite lengthily because
-                        // we cannot make batch insert since the tiles are requested asynchronously
-                        String tile_id = UUID.nameUUIDFromBytes(tileDataFinal).toString();
+                mExecutorService.submit(
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                // save to database in worker thread
+                                // the operation can be quite lengthily because
+                                // we cannot make batch insert since the tiles are requested asynchronously
+                                String tile_id = UUID.nameUUIDFromBytes(tileDataFinal).toString();
 
-                        String[] projection = new String[]{TilesContract.COLUMN_TILE_ID};
-                        String selection = TilesContract.COLUMN_TILE_ID + " = ?";
-                        String[] selectionParams = new String[]{tile_id};
+                                // insert into separate tables
+                                ContentValues values = new ContentValues();
+                                values.put(TilesContract.COLUMN_TILE_ID, tile_id);
+                                values.put(TilesContract.COLUMN_TILE_DATA, tileDataFinal);
+                                insertImages(values);
 
-                        // only insert if we don't have the tile
-                        // this will prevent adding redundant tiles like blue ocean tile
-                        Cursor cursor = mDatabase.query(TilesContract.TABLE_IMAGES, projection, selection, selectionParams, null, null, null);
-                        if (cursor.getCount() == 0) {
-                            // insert into separate tables
-                            ContentValues values = new ContentValues();
-                            values.put(TilesContract.COLUMN_TILE_ID, tile_id);
-                            values.put(TilesContract.COLUMN_TILE_DATA, tileDataFinal);
-                            mImageValues.add(values);
-                            // make batch insert for every 20 tiles
-                            if (mImageValues.size() > 20) {
-                                batchInsertImages(mImageValues);
-                                mImageValues.clear();
+                                values = new ContentValues();
+                                values.put(TilesContract.COLUMN_ZOOM_LEVEL, zFinal);
+                                values.put(TilesContract.COLUMN_TILE_COLUMN, xFinal);
+                                values.put(TilesContract.COLUMN_TILE_ROW, String.valueOf((int) (Math.pow(2, zFinal) - yFinal - 1)));
+                                values.put(TilesContract.COLUMN_TILE_ID, tile_id);
+                                insertMap(values);
                             }
-                        }
-
-                        selection = TilesContract.COLUMN_ZOOM_LEVEL + " = ? AND "
-                                + TilesContract.COLUMN_TILE_COLUMN + "= ? AND "
-                                + TilesContract.COLUMN_TILE_ROW + "= ?";
-                        selectionParams = new String[]{String.valueOf(zFinal), String.valueOf(xFinal), String.valueOf((int) (Math.pow(2, zFinal) - yFinal - 1))};
-
-                        // only insert if we don't have the tile
-                        cursor = mDatabase.query(TilesContract.TABLE_MAP, projection, selection, selectionParams, null, null, null);
-                        if (cursor.getCount() == 0) {
-                            ContentValues values = new ContentValues();
-                            values.put(TilesContract.COLUMN_ZOOM_LEVEL, zFinal);
-                            values.put(TilesContract.COLUMN_TILE_COLUMN, xFinal);
-                            values.put(TilesContract.COLUMN_TILE_ROW, String.valueOf((int) (Math.pow(2, zFinal) - yFinal - 1)));
-                            values.put(TilesContract.COLUMN_TILE_ID, tile_id);
-                            mMapValues.add(values);
-                            // make batch insert for every 20 tiles
-                            if (mMapValues.size() > 20) {
-                                batchInsertMap(mMapValues);
-                                mMapValues.clear();
-                            }
-                        }
-                    }
-                }).start();
+                        }));
 
                 // return the cursor containing the tile_data
                 return getCursorWithTile(tileData);
@@ -189,39 +157,35 @@ public class TilesContentProvider extends ContentProvider {
         return null;
     }
 
-    private void batchInsertImages(List<ContentValues> cValues) {
+    private void insertImages(ContentValues cValue) {
         String sql = "INSERT INTO " + TilesContract.TABLE_IMAGES + " VALUES (?,?);";
         SQLiteStatement statement = mDatabase.compileStatement(sql);
         mDatabase.beginTransaction();
-        for (ContentValues cValue : cValues) {
-            statement.clearBindings();
-            statement.bindBlob(1, cValue.getAsByteArray(TilesContract.COLUMN_TILE_DATA));
-            statement.bindString(2, cValue.getAsString(TilesContract.COLUMN_TILE_ID));
-            try {
-                statement.execute();
-            } catch (Exception e) {
-                // this is a non-unique tile_id
-            }
+        statement.clearBindings();
+        statement.bindBlob(1, cValue.getAsByteArray(TilesContract.COLUMN_TILE_DATA));
+        statement.bindString(2, cValue.getAsString(TilesContract.COLUMN_TILE_ID));
+        try {
+            statement.execute();
+        } catch (Exception e) {
+            // this is a non-unique tile_id
         }
         mDatabase.setTransactionSuccessful();
         mDatabase.endTransaction();
     }
 
-    private void batchInsertMap(List<ContentValues> cValues) {
+    private void insertMap(ContentValues cValue) {
         String sql = "INSERT INTO " + TilesContract.TABLE_MAP + " VALUES (?,?,?,?);";
         SQLiteStatement statement = mDatabase.compileStatement(sql);
         mDatabase.beginTransaction();
-        for (ContentValues cValue : cValues) {
-            statement.clearBindings();
-            statement.bindLong(1, cValue.getAsLong(TilesContract.COLUMN_ZOOM_LEVEL));
-            statement.bindLong(2, cValue.getAsLong(TilesContract.COLUMN_TILE_COLUMN));
-            statement.bindLong(3, cValue.getAsLong(TilesContract.COLUMN_TILE_ROW));
-            statement.bindString(4, cValue.getAsString(TilesContract.COLUMN_TILE_ID));
-            try {
-                statement.execute();
-            } catch (Exception e) {
-                // this is a non-unique tile_id
-            }
+        statement.clearBindings();
+        statement.bindLong(1, cValue.getAsLong(TilesContract.COLUMN_ZOOM_LEVEL));
+        statement.bindLong(2, cValue.getAsLong(TilesContract.COLUMN_TILE_COLUMN));
+        statement.bindLong(3, cValue.getAsLong(TilesContract.COLUMN_TILE_ROW));
+        statement.bindString(4, cValue.getAsString(TilesContract.COLUMN_TILE_ID));
+        try {
+            statement.execute();
+        } catch (Exception e) {
+            // this is a non-unique tile_id
         }
         mDatabase.setTransactionSuccessful();
         mDatabase.endTransaction();
