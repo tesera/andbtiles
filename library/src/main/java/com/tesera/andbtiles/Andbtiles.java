@@ -2,11 +2,14 @@ package com.tesera.andbtiles;
 
 import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteConstraintException;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
@@ -22,8 +25,10 @@ import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.pojos.TileJson;
 import com.tesera.andbtiles.services.HarvesterService;
 import com.tesera.andbtiles.utils.Consts;
+import com.tesera.andbtiles.utils.TilesContract;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -32,18 +37,29 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
 import java.io.File;
+import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Andbtiles {
 
     private final Context mContext;
+    private MapsDatabase mMapsDatabase;
+    private SQLiteDatabase mDatabase;
+    private ExecutorService mExecutorService;
+    private Gson mGson;
+    private HashMap<String, MapItem> mRecentMaps;
 
     /**
      * Class constructor.
@@ -52,6 +68,109 @@ public class Andbtiles {
      */
     public Andbtiles(Context context) {
         this.mContext = context;
+        mMapsDatabase = new MapsDatabase(context);
+        mGson = new Gson();
+        mExecutorService = Executors.newSingleThreadExecutor();
+        mRecentMaps = new HashMap<>();
+    }
+
+    /**
+     * Returns a tile data as bytes array from the database uniquely identified by the mapID with specified zoom and coordinates
+     * <p/>
+     * This method always returns immediately or throws an exception if something went wrong
+     * saved in the database or null if there is none.
+     *
+     * @param mapId unique database identifier
+     * @param z     the zoom level
+     * @param x     the x tile coordinate
+     * @param y     the y tile coordinate
+     * @return bytes array representing the requested tile
+     * @see com.tesera.andbtiles.exceptions.AndbtilesException
+     */
+    public byte[] getTile(String mapId, int z, int x, int y) throws AndbtilesException {
+        System.out.println(mapId);
+        MapItem mapItem;
+        if (mRecentMaps.containsKey(mapId))
+            mapItem = mRecentMaps.get(mapId);
+        else {
+            mMapsDatabase.open();
+            mapItem = mMapsDatabase.findMapById(mapId);
+            if (mapItem == null) {
+                // try a local file instead since
+                // the remote files have ids like <user>.<mapname>
+                // the remote files have ids like <mapname>.mbtiles
+                mapId = mapId.split("\\.")[1] + ".mbtiles";
+                mapItem = mMapsDatabase.findMapById(mapId);
+                if (mapItem == null)
+                    throw new AndbtilesException("Map <" + mapId + "> with not found in maps.");
+            }
+            mMapsDatabase.close();
+            mRecentMaps.put(mapId, mapItem);
+        }
+
+        // open the database by id
+        if (mDatabase == null)
+            mDatabase = SQLiteDatabase.openOrCreateDatabase(mapItem.getPath(), null);
+        // make the database query with the TSM coordinates
+        String[] projection = new String[]{TilesContract.COLUMN_TILE_DATA};
+        String selection = TilesContract.COLUMN_ZOOM_LEVEL + " = ? AND "
+                + TilesContract.COLUMN_TILE_COLUMN + "= ? AND "
+                + TilesContract.COLUMN_TILE_ROW + "= ?";
+        String[] selectionArgs = new String[]{String.valueOf(z), String.valueOf(x), String.valueOf((int) (Math.pow(2, z) - y - 1))};
+
+        // handle tile request
+        switch (mapItem.getCacheMode()) {
+            case Consts.CACHE_NO:
+                return null;
+            case Consts.CACHE_ON_DEMAND:
+                // try to find the tile in the database
+                Cursor cursor = mDatabase.query(TilesContract.TABLE_TILES, projection, selection, selectionArgs, null, null, null);
+                if (cursor.moveToFirst())
+                    return cursor.getBlob(cursor.getColumnIndex(TilesContract.COLUMN_TILE_DATA));
+                else {
+                    // make final variables for accessing from worker scope
+                    final TileJson tileJsonFinal = mGson.fromJson(mapItem.getJsonData(), TileJson.class);
+                    final int zFinal = z;
+                    final int xFinal = x;
+                    final int yFinal = y;
+                    // cache the on demand tiles
+                    mExecutorService.submit(
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    // fetch tile from the web
+                                    final byte[] tileDataFinal = getTileBytes(zFinal, xFinal, yFinal, tileJsonFinal);
+                                    // save to database in worker thread
+                                    // the operation can be quite lengthily because
+                                    // we cannot make batch insert since the tiles are requested asynchronously
+                                    String tile_id = UUID.nameUUIDFromBytes(tileDataFinal).toString();
+
+                                    // insert into separate tables
+                                    ContentValues values = new ContentValues();
+                                    values.put(TilesContract.COLUMN_TILE_ID, tile_id);
+                                    values.put(TilesContract.COLUMN_TILE_DATA, tileDataFinal);
+                                    insertImages(values);
+
+                                    values = new ContentValues();
+                                    values.put(TilesContract.COLUMN_ZOOM_LEVEL, zFinal);
+                                    values.put(TilesContract.COLUMN_TILE_COLUMN, xFinal);
+                                    values.put(TilesContract.COLUMN_TILE_ROW, String.valueOf((int) (Math.pow(2, zFinal) - yFinal - 1)));
+                                    values.put(TilesContract.COLUMN_TILE_ID, tile_id);
+                                    insertMap(values);
+                                }
+                            }));
+                    // return the cursor containing the tile_data
+                    return null;
+                }
+            case Consts.CACHE_FULL:
+            case Consts.CACHE_DATA:
+                cursor = mDatabase.query(TilesContract.TABLE_TILES, projection, selection, selectionArgs, null, null, null);
+                if (cursor.moveToFirst())
+                    return cursor.getBlob(cursor.getColumnIndex(TilesContract.COLUMN_TILE_DATA));
+            default:
+                break;
+        }
+        return null;
     }
 
     /**
@@ -158,20 +277,20 @@ public class Andbtiles {
      * This method executes in a background thread and informs the main thread via the callback.
      *
      * @param urlToJsonTileEndpoint an absolute URL to the TileJSON endpoint on the web
-     * @param mapName               the name of a map that can be found at the endpoint
+     * @param mapId                 the unique id of a map that can be found at the endpoint
      * @param cacheMethod           one of the available cache methods
      * @param callback              a callback for returning the background thread status
      * @see com.tesera.andbtiles.utils.Consts
      * @see com.tesera.andbtiles.callbacks.AndbtilesCallback
      */
-    public void addRemoteJsonTileProvider(String urlToJsonTileEndpoint, String mapName, int cacheMethod, AndbtilesCallback callback) {
+    public void addRemoteJsonTileProvider(String urlToJsonTileEndpoint, String mapId, int cacheMethod, AndbtilesCallback callback) {
         // do a URL and extension check
         if (!urlToJsonTileEndpoint.matches(Patterns.WEB_URL.pattern()) || !urlToJsonTileEndpoint.endsWith(Consts.EXTENSION_JSON))
             callback.onError(new AndbtilesException(
                     String.format(mContext.getString(R.string.exception_invalid_url_jsontile), urlToJsonTileEndpoint)));
 
         ProcessTileJson task = new ProcessTileJson(callback);
-        task.execute(urlToJsonTileEndpoint, mapName, "" + cacheMethod);
+        task.execute(urlToJsonTileEndpoint, mapId, "" + cacheMethod);
     }
 
     /**
@@ -193,7 +312,7 @@ public class Andbtiles {
      * This method executes in a background thread and informs the main thread via the callback.
      *
      * @param urlToJsonTileEndpoint an absolute URL to the TileJSON endpoint on the web
-     * @param mapName               the name of a map that can be found at the endpoint
+     * @param mapId                 the unique id of a map that can be found at the endpoint
      * @param cacheMethod           one of the available cache methods
      * @param minZoom               the minimum zoom as a harvest start point
      * @param maxZoom               the maximum zoom as a harvest endpoint
@@ -201,14 +320,14 @@ public class Andbtiles {
      * @see com.tesera.andbtiles.utils.Consts
      * @see com.tesera.andbtiles.callbacks.AndbtilesCallback
      */
-    public void addRemoteJsonTileProvider(String urlToJsonTileEndpoint, String mapName, int cacheMethod, int minZoom, int maxZoom, AndbtilesCallback callback) {
+    public void addRemoteJsonTileProvider(String urlToJsonTileEndpoint, String mapId, int cacheMethod, int minZoom, int maxZoom, AndbtilesCallback callback) {
         // do a URL and extension check
         if (!urlToJsonTileEndpoint.matches(Patterns.WEB_URL.pattern()) || !urlToJsonTileEndpoint.endsWith(Consts.EXTENSION_JSON))
             callback.onError(new AndbtilesException(
                     String.format(mContext.getString(R.string.exception_invalid_url_jsontile), urlToJsonTileEndpoint)));
 
         ProcessTileJson task = new ProcessTileJson(callback);
-        task.execute(urlToJsonTileEndpoint, mapName, "" + cacheMethod, "" + minZoom, "" + maxZoom);
+        task.execute(urlToJsonTileEndpoint, mapId, "" + cacheMethod, "" + minZoom, "" + maxZoom);
     }
 
     /**
@@ -326,6 +445,60 @@ public class Andbtiles {
         context.registerReceiver(receiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
     }
 
+    private byte[] getTileBytes(int z, int x, int y, TileJson tileJson) {
+        String tilesUrl = tileJson.getTiles().get(0).toString();
+        tilesUrl = tilesUrl.replace("{z}", "" + z).replace("{x}", "" + x).replace("{y}", "" + y);
+        // this already is an worker thread so we can fetch network data here
+        try {
+            // download the tile from the web url
+            URL url = new URL(tilesUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            // convert the primitive input stream to the wrapper class
+            return IOUtils.toByteArray(input);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+    private void insertImages(ContentValues cValue) {
+        String sql = "INSERT INTO " + TilesContract.TABLE_IMAGES + " VALUES (?,?);";
+        SQLiteStatement statement = mDatabase.compileStatement(sql);
+        mDatabase.beginTransaction();
+        statement.clearBindings();
+        statement.bindBlob(1, cValue.getAsByteArray(TilesContract.COLUMN_TILE_DATA));
+        statement.bindString(2, cValue.getAsString(TilesContract.COLUMN_TILE_ID));
+        try {
+            statement.execute();
+        } catch (Exception e) {
+            // this is a non-unique tile_id
+        }
+        mDatabase.setTransactionSuccessful();
+        mDatabase.endTransaction();
+    }
+
+    private void insertMap(ContentValues cValue) {
+        String sql = "INSERT INTO " + TilesContract.TABLE_MAP + " VALUES (?,?,?,?);";
+        SQLiteStatement statement = mDatabase.compileStatement(sql);
+        mDatabase.beginTransaction();
+        statement.clearBindings();
+        statement.bindLong(1, cValue.getAsLong(TilesContract.COLUMN_ZOOM_LEVEL));
+        statement.bindLong(2, cValue.getAsLong(TilesContract.COLUMN_TILE_COLUMN));
+        statement.bindLong(3, cValue.getAsLong(TilesContract.COLUMN_TILE_ROW));
+        statement.bindString(4, cValue.getAsString(TilesContract.COLUMN_TILE_ID));
+        try {
+            statement.execute();
+        } catch (Exception e) {
+            // this is a non-unique tile_id
+        }
+        mDatabase.setTransactionSuccessful();
+        mDatabase.endTransaction();
+    }
+
     // helper class for processing maps obtained from TileJSON endpoint
     private class ProcessTileJson extends AsyncTask<String, Void, String> {
 
@@ -359,13 +532,13 @@ public class Andbtiles {
                 } else {
                     // this is a JSON object
                     TileJson tileJson = gson.fromJson(jsonResponse, TileJson.class);
+                    params[1] = tileJson.getId();
                     mTileJsonList.add(tileJson);
                 }
 
                 // find the map with the given name
                 for (TileJson tileJson : mTileJsonList) {
-                    if (tileJson.getName().equalsIgnoreCase(params[1])) {
-
+                    if (tileJson.getId().equalsIgnoreCase(params[1])) {
                         MapItem mapItem = new MapItem();
                         mapItem.setId(tileJson.getId());
                         mapItem.setName(tileJson.getName());
@@ -376,7 +549,7 @@ public class Andbtiles {
 
                         // create a local path for database
                         String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
-                                + Consts.FOLDER_ROOT + File.separator + mapItem.getId() + "." + Consts.EXTENSION_MBTILES;
+                                + Consts.FOLDER_ROOT + File.separator + mapItem.getId();
 
                         switch (Integer.parseInt(params[2])) {
                             case Consts.CACHE_NO:
@@ -414,12 +587,10 @@ public class Andbtiles {
                         return null;
                     }
                 }
-
                 return "Map not found in TileJSON endpoint: " + params[1];
             } catch (Exception e) {
                 e.printStackTrace();
-                mCallback.onError(e);
-                return null;
+                return e.getMessage();
             }
         }
 
@@ -433,7 +604,6 @@ public class Andbtiles {
         }
 
         private void insertMetadata(MapItem mapItem) {
-
             // delete previous database because conflicts occur
             File database = new File(mapItem.getPath());
             if (database.exists())

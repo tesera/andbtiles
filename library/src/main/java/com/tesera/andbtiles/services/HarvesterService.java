@@ -33,7 +33,6 @@ public class HarvesterService extends IntentService {
 
     private SQLiteDatabase mDatabase;
     private TileJson mTileJson;
-    private ExecutorService mExecutorService;
 
     public HarvesterService(String name) {
         super(name);
@@ -50,7 +49,7 @@ public class HarvesterService extends IntentService {
         mTileJson = new Gson().fromJson(mapItem.getJsonData(), TileJson.class);
 
         mDatabase = SQLiteDatabase.openOrCreateDatabase(mapItem.getPath(), null);
-        mExecutorService = Executors.newSingleThreadExecutor();
+        ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
 
         // notify the user
         int maxProgress = calculateMaxProgress();
