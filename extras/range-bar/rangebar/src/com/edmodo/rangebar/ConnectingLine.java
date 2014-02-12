@@ -38,8 +38,8 @@ class ConnectingLine {
         final Resources res = ctx.getResources();
 
         mConnectingLineWeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                                                          connectingLineWeight,
-                                                          res.getDisplayMetrics());
+                connectingLineWeight,
+                res.getDisplayMetrics());
 
         // Initialize the paint, set values
         mPaint = new Paint();
@@ -54,9 +54,9 @@ class ConnectingLine {
 
     /**
      * Draw the connecting line between the two thumbs.
-     * 
-     * @param canvas the Canvas to draw to
-     * @param leftThumb the left thumb
+     *
+     * @param canvas     the Canvas to draw to
+     * @param leftThumb  the left thumb
      * @param rightThumb the right thumb
      */
     void draw(Canvas canvas, Thumb leftThumb, Thumb rightThumb) {

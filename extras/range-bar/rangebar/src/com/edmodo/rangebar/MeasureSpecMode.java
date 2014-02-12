@@ -40,7 +40,7 @@ public enum MeasureSpecMode {
 
     /**
      * Gets the int value associated with this mode.
-     * 
+     *
      * @return the int value associated with this mode
      */
     public int getModeValue() {
@@ -50,9 +50,9 @@ public enum MeasureSpecMode {
     /**
      * Gets the MeasureSpecMode value that corresponds with the given
      * measureSpec int value.
-     * 
+     *
      * @param measureSpec the measure specification passed by the platform to
-     *            {@link View#onMeasure(int, int)}
+     *                    {@link View#onMeasure(int, int)}
      * @return the MeasureSpecMode that matches with that measure spec
      */
     public static MeasureSpecMode getMode(int measureSpec) {

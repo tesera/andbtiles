@@ -79,12 +79,8 @@ class CacheSettingsFragment extends Fragment {
                 mMapItem.setCacheMode(mCacheGroup.indexOfChild(mCacheGroup.findViewById(mCacheGroup.getCheckedRadioButtonId())));
                 switch (mMapItem.getCacheMode()) {
                     case Consts.CACHE_FULL:
-                        Bundle args = new Bundle();
-                        args.putString(Consts.EXTRA_JSON, getArguments().getString(Consts.EXTRA_JSON));
-
                         HarvestSettingsFragment fragment = new HarvestSettingsFragment();
                         fragment.setmMapItem(mMapItem);
-                        fragment.setArguments(args);
                         getFragmentManager().beginTransaction()
                                 .replace(R.id.container, fragment)
                                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
@@ -93,7 +89,7 @@ class CacheSettingsFragment extends Fragment {
                         return;
                     case Consts.CACHE_NO:
                     case Consts.CACHE_ON_DEMAND:
-                        andbtiles.addRemoteJsonTileProvider(getArguments().getString(Consts.EXTRA_JSON), mMapItem.getName(),
+                        andbtiles.addRemoteJsonTileProvider(mMapItem.getJsonData(), mMapItem.getId(),
                                 mMapItem.getCacheMode(), new AndbtilesCallback() {
                             @Override
                             public void onSuccess() {
@@ -106,6 +102,7 @@ class CacheSettingsFragment extends Fragment {
 
                             @Override
                             public void onError(Exception e) {
+                                e.printStackTrace();
                                 if (!isAdded())
                                     return;
                                 Toast.makeText(getActivity(), getString(R.string.crouton_database_error), Toast.LENGTH_SHORT).show();

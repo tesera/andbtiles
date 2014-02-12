@@ -57,8 +57,8 @@ class Bar {
         mNumSegments = tickCount - 1;
         mTickDistance = length / mNumSegments;
         mTickHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                                                tickHeightDP,
-                                                ctx.getResources().getDisplayMetrics());
+                tickHeightDP,
+                ctx.getResources().getDisplayMetrics());
         mTickStartY = mY - mTickHeight / 2f;
         mTickEndY = mY + mTickHeight / 2f;
 
@@ -73,9 +73,9 @@ class Bar {
 
     /**
      * Draws the bar on the given Canvas.
-     * 
+     *
      * @param canvas Canvas to draw on; should be the Canvas passed into {#link
-     *            View#onDraw()}
+     *               View#onDraw()}
      */
     void draw(Canvas canvas) {
 
@@ -86,7 +86,7 @@ class Bar {
 
     /**
      * Get the x-coordinate of the left edge of the bar.
-     * 
+     *
      * @return x-coordinate of the left edge of the bar
      */
     float getLeftX() {
@@ -95,7 +95,7 @@ class Bar {
 
     /**
      * Get the x-coordinate of the right edge of the bar.
-     * 
+     *
      * @return x-coordinate of the right edge of the bar
      */
     float getRightX() {
@@ -104,7 +104,7 @@ class Bar {
 
     /**
      * Gets the x-coordinate of the nearest tick to the given x-coordinate.
-     * 
+     *
      * @param x the x-coordinate to find the nearest tick for
      * @return the x-coordinate of the nearest tick
      */
@@ -119,7 +119,7 @@ class Bar {
 
     /**
      * Gets the zero-based index of the nearest tick to the given thumb.
-     * 
+     *
      * @param thumb the Thumb to find the nearest tick for
      * @return the zero-based index of the nearest tick
      */
@@ -132,7 +132,7 @@ class Bar {
 
     /**
      * Set the number of ticks that will appear in the RangeBar.
-     * 
+     *
      * @param tickCount the number of ticks
      */
     void setTickCount(int tickCount) {
@@ -147,9 +147,9 @@ class Bar {
 
     /**
      * Draws the tick marks on the bar.
-     * 
+     *
      * @param canvas Canvas to draw on; should be the Canvas passed into {#link
-     *            View#onDraw()}
+     *               View#onDraw()}
      */
     private void drawTicks(Canvas canvas) {
 

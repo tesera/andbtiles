@@ -11,6 +11,7 @@ public class Consts {
     // preferences
     public static final String PREF_NAME = "prefs";
     public static final String PREF_KEY_LOCAL_FILES_CACHE = "local_files_cache";
+    public static final String PREF_KEY_JSON_ENDPOINT_CACHE = "json_endpoint_cache";
     // cache methods
     public static final int CACHE_NO = 0;
     public static final int CACHE_ON_DEMAND = 1;

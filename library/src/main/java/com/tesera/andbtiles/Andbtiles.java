@@ -284,11 +284,6 @@ public class Andbtiles {
      * @see com.tesera.andbtiles.callbacks.AndbtilesCallback
      */
     public void addRemoteJsonTileProvider(String urlToJsonTileEndpoint, String mapId, int cacheMethod, AndbtilesCallback callback) {
-        // do a URL and extension check
-        if (!urlToJsonTileEndpoint.matches(Patterns.WEB_URL.pattern()) || !urlToJsonTileEndpoint.endsWith(Consts.EXTENSION_JSON))
-            callback.onError(new AndbtilesException(
-                    String.format(mContext.getString(R.string.exception_invalid_url_jsontile), urlToJsonTileEndpoint)));
-
         ProcessTileJson task = new ProcessTileJson(callback);
         task.execute(urlToJsonTileEndpoint, mapId, "" + cacheMethod);
     }
@@ -321,11 +316,6 @@ public class Andbtiles {
      * @see com.tesera.andbtiles.callbacks.AndbtilesCallback
      */
     public void addRemoteJsonTileProvider(String urlToJsonTileEndpoint, String mapId, int cacheMethod, int minZoom, int maxZoom, AndbtilesCallback callback) {
-        // do a URL and extension check
-        if (!urlToJsonTileEndpoint.matches(Patterns.WEB_URL.pattern()) || !urlToJsonTileEndpoint.endsWith(Consts.EXTENSION_JSON))
-            callback.onError(new AndbtilesException(
-                    String.format(mContext.getString(R.string.exception_invalid_url_jsontile), urlToJsonTileEndpoint)));
-
         ProcessTileJson task = new ProcessTileJson(callback);
         task.execute(urlToJsonTileEndpoint, mapId, "" + cacheMethod, "" + minZoom, "" + maxZoom);
     }
@@ -512,14 +502,19 @@ public class Andbtiles {
         protected String doInBackground(String... params) {
             // display the list of maps from the TileJSON otherwise
             try {
-                HttpClient client = new DefaultHttpClient();
-                // execute GET method
-                HttpGet request = new HttpGet(params[0]);
-                HttpResponse response = client.execute(request);
+                String jsonResponse = params[0];
+                // if the json data is a url fetch the data
+                // otherwise use the cached data
+                if (params[0].matches(Patterns.WEB_URL.pattern()) && params[0].endsWith(Consts.EXTENSION_JSON)) {
+                    HttpClient client = new DefaultHttpClient();
+                    // execute GET method
+                    HttpGet request = new HttpGet(params[0]);
+                    HttpResponse response = client.execute(request);
 
-                // get the response
-                HttpEntity responseEntity = response.getEntity();
-                String jsonResponse = EntityUtils.toString(responseEntity);
+                    // get the response
+                    HttpEntity responseEntity = response.getEntity();
+                    jsonResponse = EntityUtils.toString(responseEntity);
+                }
 
                 // parse the response
                 List<TileJson> mTileJsonList = new ArrayList<>();

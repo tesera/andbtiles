@@ -21,8 +21,8 @@ import java.util.List;
 public class MapsAdapter extends BaseAdapter implements Filterable {
 
     private final Context mContext;
-    private List<MapItem> mMaps;
     private final List<MapItem> mMapsOriginal;
+    private List<MapItem> mMaps;
 
     public MapsAdapter(Context mContext, List<MapItem> mMaps) {
         this.mContext = mContext;
@@ -61,7 +61,9 @@ public class MapsAdapter extends BaseAdapter implements Filterable {
         MapItem map = mMaps.get(position);
 
         holder.name.setText(map.getName().replace("." + Consts.EXTENSION_MBTILES, ""));
-        holder.path.setText(map.getPath());
+        holder.path.setText(map.getId());
+        if (map.getPath() != null)
+            holder.path.append("\n" + map.getPath());
         if (map.getSize() != 0)
             holder.path.append("\n" + Formatter.formatFileSize(mContext, map.getSize()));
 

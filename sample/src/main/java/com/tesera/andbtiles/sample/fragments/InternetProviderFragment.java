@@ -34,6 +34,7 @@ import com.tesera.andbtiles.sample.adapters.MBTilesAdapter;
 import com.tesera.andbtiles.sample.adapters.MapsAdapter;
 import com.tesera.andbtiles.sample.callbacks.ActivityCallback;
 import com.tesera.andbtiles.sample.utils.Consts;
+import com.tesera.andbtiles.sample.utils.Utils;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpEntity;
@@ -88,12 +89,8 @@ class InternetProviderFragment extends Fragment {
                     selectFile();
                     // this is a map from TileJSON so advance to cache options screen
                 else {
-                    Bundle args = new Bundle();
-                    args.putString(Consts.EXTRA_JSON, mDownloadPath);
-
                     CacheSettingsFragment fragment = new CacheSettingsFragment();
                     fragment.setmMapItem(mapItem);
-                    fragment.setArguments(args);
                     getFragmentManager().beginTransaction()
                             .replace(R.id.container, fragment)
                             .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
@@ -102,6 +99,15 @@ class InternetProviderFragment extends Fragment {
                 }
             }
         });
+
+        // check for endpoint data cache
+        String jsonResponse = Utils.getStringFromPrefs(getActivity(), Consts.PREF_KEY_JSON_ENDPOINT_CACHE);
+        if (jsonResponse != null) {
+            MapsAdapter mapsAdapter = new MapsAdapter(getActivity(), parseJsonResponse(jsonResponse));
+            mMBTilesList.setAdapter(mapsAdapter);
+        }
+
+        // setup the fetch button
         mFetch = (Button) contentView.findViewById(R.id.btn_fetch);
         mFetch.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -247,6 +253,36 @@ class InternetProviderFragment extends Fragment {
         mMBTilesList.setItemChecked(mMBTilesList.getCheckedItemPosition(), false);
     }
 
+    private List<MapItem> parseJsonResponse(String jsonResponse) {
+        // parse the response
+        List<TileJson> tileJsons = new ArrayList<>();
+        Gson gson = new Gson();
+        if (jsonResponse.startsWith("[")) {
+            // this is a JSON array
+            Type listOfDays = new TypeToken<List<TileJson>>() {
+            }.getType();
+            tileJsons = gson.fromJson(jsonResponse, listOfDays);
+        } else {
+            // this is a JSON object
+            TileJson tileJson = gson.fromJson(jsonResponse, TileJson.class);
+            tileJsons.add(tileJson);
+        }
+
+        // construct adapter items from the parsed JSON
+        List<MapItem> adapterList = new ArrayList<>();
+        for (TileJson tileJson : tileJsons) {
+            MapItem mapItem = new MapItem();
+            mapItem.setId(tileJson.getId());
+            mapItem.setName(tileJson.getName());
+            mapItem.setPath(tileJson.getDownload());
+            mapItem.setJsonData(gson.toJson(tileJson, TileJson.class));
+            if (tileJson.getFilesize() != null)
+                mapItem.setSize(tileJson.getFilesize().longValue());
+            adapterList.add(mapItem);
+        }
+        return adapterList;
+    }
+
     private class FetchURL extends AsyncTask<String, Void, List<MapItem>> {
 
         @Override
@@ -261,6 +297,7 @@ class InternetProviderFragment extends Fragment {
             if (params[0].endsWith(Consts.EXTENSION_MBTILES)) {
                 // set the name and the path of the file
                 MapItem mapItem = new MapItem();
+                mapItem.setId(FilenameUtils.getName(params[0]));
                 mapItem.setName(FilenameUtils.getName(params[0]));
                 mapItem.setPath(params[0]);
                 mapItem.setSize(getFileSize(params[0]));
@@ -277,34 +314,11 @@ class InternetProviderFragment extends Fragment {
 
                 // get the response
                 HttpEntity responseEntity = response.getEntity();
+                // cache the json response
                 String jsonResponse = EntityUtils.toString(responseEntity);
+                Utils.setStringToPrefs(getActivity(), Consts.PREF_KEY_JSON_ENDPOINT_CACHE, jsonResponse);
 
-                // parse the response
-                List<TileJson> mTileJsonList = new ArrayList<>();
-                Gson gson = new Gson();
-                if (jsonResponse.startsWith("[")) {
-                    // this is a JSON array
-                    Type listOfDays = new TypeToken<List<TileJson>>() {
-                    }.getType();
-                    mTileJsonList = gson.fromJson(jsonResponse, listOfDays);
-                } else {
-                    // this is a JSON object
-                    TileJson tileJson = gson.fromJson(jsonResponse, TileJson.class);
-                    mTileJsonList.add(tileJson);
-                }
-
-                // construct adapter items from the parsed JSON
-                List<MapItem> adapterList = new ArrayList<>();
-                for (TileJson tileJson : mTileJsonList) {
-                    MapItem mapItem = new MapItem();
-                    mapItem.setName(tileJson.getName());
-                    mapItem.setPath(tileJson.getDownload());
-                    mapItem.setJsonData(gson.toJson(tileJson, TileJson.class));
-                    if (tileJson.getFilesize() != null)
-                        mapItem.setSize(tileJson.getFilesize().longValue());
-                    adapterList.add(mapItem);
-                }
-                return adapterList;
+                return parseJsonResponse(jsonResponse);
             } catch (Exception e) {
                 // an internet connection error
                 e.printStackTrace();

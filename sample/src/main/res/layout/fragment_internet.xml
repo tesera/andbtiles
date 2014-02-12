@@ -12,7 +12,7 @@
         android:layout_gravity="center_horizontal"
         android:layout_margin="@dimen/paddding_standard"
         android:inputType="textUri"
-        android:hint="@string/hint_url"/>
+        android:hint="@string/hint_url" />
 
     <Button
         android:id="@+id/btn_fetch"

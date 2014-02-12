@@ -109,12 +109,12 @@ class Thumb {
             // attributes to default
             if (thumbRadiusDP == -1)
                 mThumbRadiusPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                                                           DEFAULT_THUMB_RADIUS_DP,
-                                                           res.getDisplayMetrics());
+                        DEFAULT_THUMB_RADIUS_DP,
+                        res.getDisplayMetrics());
             else
                 mThumbRadiusPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                                                           thumbRadiusDP,
-                                                           res.getDisplayMetrics());
+                        thumbRadiusDP,
+                        res.getDisplayMetrics());
 
             if (thumbColorNormal == -1)
                 mThumbColorNormal = DEFAULT_THUMB_COLOR_NORMAL;
@@ -147,8 +147,8 @@ class Thumb {
         int targetRadius = (int) Math.max(MINIMUM_TARGET_RADIUS_DP, thumbRadiusDP);
 
         mTargetRadiusPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                                                    targetRadius,
-                                                    res.getDisplayMetrics());
+                targetRadius,
+                res.getDisplayMetrics());
 
         mX = mHalfWidthNormal;
         mY = y;
@@ -187,11 +187,11 @@ class Thumb {
     /**
      * Determines if the input coordinate is close enough to this thumb to
      * consider it a press.
-     * 
+     *
      * @param x the x-coordinate of the user touch
      * @param y the y-coordinate of the user touch
      * @return true if the coordinates are within this thumb's target area;
-     *         false otherwise
+     * false otherwise
      */
     boolean isInTargetZone(float x, float y) {
 
@@ -203,9 +203,9 @@ class Thumb {
 
     /**
      * Draws this thumb on the provided canvas.
-     * 
+     *
      * @param canvas Canvas to draw on; should be the Canvas passed into {#link
-     *            View#onDraw()}
+     *               View#onDraw()}
      */
     void draw(Canvas canvas) {
 

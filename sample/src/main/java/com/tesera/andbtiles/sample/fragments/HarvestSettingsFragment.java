@@ -95,7 +95,7 @@ class HarvestSettingsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Andbtiles andbtiles = new Andbtiles(getActivity());
-                andbtiles.addRemoteJsonTileProvider(getArguments().getString(Consts.EXTRA_JSON), mMapItem.getName(), mMapItem.getCacheMode(), Integer.valueOf(mMinZoom.getText().toString()),
+                andbtiles.addRemoteJsonTileProvider(mMapItem.getJsonData(), mMapItem.getName(), mMapItem.getCacheMode(), Integer.valueOf(mMinZoom.getText().toString()),
                         Integer.valueOf(mMaxZoom.getText().toString()), new AndbtilesCallback() {
                     @Override
                     public void onSuccess() {
