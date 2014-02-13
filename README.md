@@ -28,7 +28,7 @@ See the Quick Start guides for more information on how to achieve a simple integ
 * [Quick Start](https://github.com/tesera/andbtiles/wiki/Quick-Start-Guide) for API v9 and above. 
 
 ## Sample application 
-Check out the [sample application](https://github.com/tesera/andbtiles/tree/master/sample) that builds UI on top of the library providing means for local file selection, remote file download, TileJSON endpoint parsing, cache method selection and map preview.  
+Check out the [sample application](https://github.com/tesera/andbtiles/tree/master/sample) that builds UI on top of the library providing means for local file selection, remote file download, TileJSON endpoint parsing, cache method selection and map preview using Google Maps.  
 
 ## Example Use Case: Web View
 1. The web view loads a map and requests a tile via http.
