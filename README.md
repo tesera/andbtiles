@@ -30,10 +30,15 @@ See the Quick Start guides for more information on how to achieve a simple integ
 ## Sample application 
 Check out the [sample application](https://github.com/tesera/andbtiles/tree/master/sample) that builds UI on top of the library providing means for local file selection, remote file download, TileJSON endpoint parsing, cache method selection and map preview.  
 
-## Example Use Case: Cordova Hybrid
-1. Leaflet.js/Mapbox request tiles via http.
-2. Angular custom http backend intercepts requests and uses custom angular service to request tile from Cordova Plugin.
-3. Cordova plugin queries MBTilesContentProvider for tile.
+## Example Use Case: Web View
+1. The web view loads a map and requests a tile via http.
+2. The web view client intercepts the request and uses content resolver to query for tile data. 
+3. The Andbtiles content provider serves the tile data to the web view.
+
+## Limitations
+A single content provider serves data only from a single database. Since the library can manage multiple maps, the connection to the previous content provider must be closed in order to use the new one.  
+Android likes to keep connections alive, so in order to close it you need to end the process that uses it. Since this can be a major inconvenience when developing apps that show multiple maps or overlays, an alternative method for tile requests is provided.  
+Check out the [Quick Start](https://github.com/tesera/andbtiles/wiki/Quick-Start-Guide) guide for more. 
 
 ## Roadmap:
 * ver1: ability to add manual datasources
