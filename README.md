@@ -38,7 +38,7 @@ Check out the [sample application](https://github.com/tesera/andbtiles/tree/mast
 ## Limitations
 A single content provider serves data only from a single database. Since the library can manage multiple maps, the connection to the previous content provider must be closed in order to use the new one.  
 Android likes to keep connections alive, so in order to close it you need to end the process that uses it. Since this can be a major inconvenience when developing apps that show multiple maps or overlays, an alternative method for tile requests is provided.  
-Check out the [Quick Start](https://github.com/tesera/andbtiles/wiki/Quick-Start-Guide) guide for more. 
+Check out the getTile() method in the [Examples](https://github.com/tesera/andbtiles/wiki/Examples) for details. 
 
 ## Roadmap:
 * ver1: ability to add manual datasources
