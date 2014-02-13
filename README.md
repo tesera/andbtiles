@@ -2,7 +2,7 @@ Andbtiles
 =========
 
 Andbtiles is an Android utility library that manages downloading, caching or harvesting of MBTiles and exposing them to external applications via a Content Provider.  
-_content://com.tesera.andbtiles.provider/{map_name}/tiles
+_content://com.tesera.andbtiles.provider/{mapId}/tiles
 
 ## Features
 
