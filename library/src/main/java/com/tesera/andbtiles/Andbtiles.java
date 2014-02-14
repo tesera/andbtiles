@@ -56,10 +56,10 @@ public class Andbtiles {
 
     private final Context mContext;
     private MapsDatabase mMapsDatabase;
-    private SQLiteDatabase mDatabase;
     private ExecutorService mExecutorService;
     private Gson mGson;
     private HashMap<String, MapItem> mRecentMaps;
+    private HashMap<String, SQLiteDatabase> mRecentDatabases;
 
     /**
      * Class constructor.
@@ -72,6 +72,7 @@ public class Andbtiles {
         mGson = new Gson();
         mExecutorService = Executors.newSingleThreadExecutor();
         mRecentMaps = new HashMap<>();
+        mRecentDatabases = new HashMap<>();
     }
 
     /**
@@ -88,7 +89,6 @@ public class Andbtiles {
      * @see com.tesera.andbtiles.exceptions.AndbtilesException
      */
     public byte[] getTile(String mapId, int z, int x, int y) throws AndbtilesException {
-        System.out.println(mapId);
         MapItem mapItem;
         if (mRecentMaps.containsKey(mapId))
             mapItem = mRecentMaps.get(mapId);
@@ -109,8 +109,10 @@ public class Andbtiles {
         }
 
         // open the database by id
-        if (mDatabase == null)
-            mDatabase = SQLiteDatabase.openOrCreateDatabase(mapItem.getPath(), null);
+        if (mRecentDatabases.get(mapId) == null) {
+            SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(mapItem.getPath(), null);
+            mRecentDatabases.put(mapId, database);
+        }
         // make the database query with the TSM coordinates
         String[] projection = new String[]{TilesContract.COLUMN_TILE_DATA};
         String selection = TilesContract.COLUMN_ZOOM_LEVEL + " = ? AND "
@@ -124,7 +126,7 @@ public class Andbtiles {
                 return null;
             case Consts.CACHE_ON_DEMAND:
                 // try to find the tile in the database
-                Cursor cursor = mDatabase.query(TilesContract.TABLE_TILES, projection, selection, selectionArgs, null, null, null);
+                Cursor cursor = mRecentDatabases.get(mapId).query(TilesContract.TABLE_TILES, projection, selection, selectionArgs, null, null, null);
                 if (cursor.moveToFirst())
                     return cursor.getBlob(cursor.getColumnIndex(TilesContract.COLUMN_TILE_DATA));
                 else {
@@ -133,6 +135,8 @@ public class Andbtiles {
                     final int zFinal = z;
                     final int xFinal = x;
                     final int yFinal = y;
+                    final String finalMapId = mapId;
+
                     // cache the on demand tiles
                     mExecutorService.submit(
                             new Thread(new Runnable() {
@@ -149,14 +153,14 @@ public class Andbtiles {
                                     ContentValues values = new ContentValues();
                                     values.put(TilesContract.COLUMN_TILE_ID, tile_id);
                                     values.put(TilesContract.COLUMN_TILE_DATA, tileDataFinal);
-                                    insertImages(values);
+                                    insertImages(values, finalMapId);
 
                                     values = new ContentValues();
                                     values.put(TilesContract.COLUMN_ZOOM_LEVEL, zFinal);
                                     values.put(TilesContract.COLUMN_TILE_COLUMN, xFinal);
                                     values.put(TilesContract.COLUMN_TILE_ROW, String.valueOf((int) (Math.pow(2, zFinal) - yFinal - 1)));
                                     values.put(TilesContract.COLUMN_TILE_ID, tile_id);
-                                    insertMap(values);
+                                    insertMap(values, finalMapId);
                                 }
                             }));
                     // return the cursor containing the tile_data
@@ -164,7 +168,7 @@ public class Andbtiles {
                 }
             case Consts.CACHE_FULL:
             case Consts.CACHE_DATA:
-                cursor = mDatabase.query(TilesContract.TABLE_TILES, projection, selection, selectionArgs, null, null, null);
+                cursor = mRecentDatabases.get(mapId).query(TilesContract.TABLE_TILES, projection, selection, selectionArgs, null, null, null);
                 if (cursor.moveToFirst())
                     return cursor.getBlob(cursor.getColumnIndex(TilesContract.COLUMN_TILE_DATA));
             default:
@@ -455,10 +459,10 @@ public class Andbtiles {
     }
 
 
-    private void insertImages(ContentValues cValue) {
+    private void insertImages(ContentValues cValue, String mapId) {
         String sql = "INSERT INTO " + TilesContract.TABLE_IMAGES + " VALUES (?,?);";
-        SQLiteStatement statement = mDatabase.compileStatement(sql);
-        mDatabase.beginTransaction();
+        SQLiteStatement statement = mRecentDatabases.get(mapId).compileStatement(sql);
+        mRecentDatabases.get(mapId).beginTransaction();
         statement.clearBindings();
         statement.bindBlob(1, cValue.getAsByteArray(TilesContract.COLUMN_TILE_DATA));
         statement.bindString(2, cValue.getAsString(TilesContract.COLUMN_TILE_ID));
@@ -467,14 +471,14 @@ public class Andbtiles {
         } catch (Exception e) {
             // this is a non-unique tile_id
         }
-        mDatabase.setTransactionSuccessful();
-        mDatabase.endTransaction();
+        mRecentDatabases.get(mapId).setTransactionSuccessful();
+        mRecentDatabases.get(mapId).endTransaction();
     }
 
-    private void insertMap(ContentValues cValue) {
+    private void insertMap(ContentValues cValue, String mapId) {
         String sql = "INSERT INTO " + TilesContract.TABLE_MAP + " VALUES (?,?,?,?);";
-        SQLiteStatement statement = mDatabase.compileStatement(sql);
-        mDatabase.beginTransaction();
+        SQLiteStatement statement = mRecentDatabases.get(mapId).compileStatement(sql);
+        mRecentDatabases.get(mapId).beginTransaction();
         statement.clearBindings();
         statement.bindLong(1, cValue.getAsLong(TilesContract.COLUMN_ZOOM_LEVEL));
         statement.bindLong(2, cValue.getAsLong(TilesContract.COLUMN_TILE_COLUMN));
@@ -485,8 +489,8 @@ public class Andbtiles {
         } catch (Exception e) {
             // this is a non-unique tile_id
         }
-        mDatabase.setTransactionSuccessful();
-        mDatabase.endTransaction();
+        mRecentDatabases.get(mapId).setTransactionSuccessful();
+        mRecentDatabases.get(mapId).endTransaction();
     }
 
     // helper class for processing maps obtained from TileJSON endpoint

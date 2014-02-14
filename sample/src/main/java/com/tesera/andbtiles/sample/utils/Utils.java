@@ -9,7 +9,9 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Utils {
 
@@ -36,5 +38,17 @@ public class Utils {
 
     public static void setStringToPrefs(Context context, String key, String value) {
         context.getSharedPreferences(Consts.PREF_NAME, Context.MODE_PRIVATE).edit().putString(key, value).commit();
+    }
+
+    public static Set<String> getStringSetFromPrefs(Context context, String key) {
+        return context.getSharedPreferences(Consts.PREF_NAME, Context.MODE_PRIVATE).getStringSet(key, null);
+    }
+
+    public static void setStringSetToPrefs(Context context, String key, String value) {
+        Set<String> cachedSet = getStringSetFromPrefs(context, key);
+        if (cachedSet == null)
+            cachedSet = new HashSet<>();
+        cachedSet.add(value);
+        context.getSharedPreferences(Consts.PREF_NAME, Context.MODE_PRIVATE).edit().putStringSet(key, cachedSet).commit();
     }
 }

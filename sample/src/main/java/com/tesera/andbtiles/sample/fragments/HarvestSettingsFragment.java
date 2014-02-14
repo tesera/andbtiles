@@ -5,6 +5,7 @@ import android.app.Fragment;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -18,7 +19,6 @@ import com.tesera.andbtiles.callbacks.AndbtilesCallback;
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.pojos.TileJson;
 import com.tesera.andbtiles.sample.R;
-import com.tesera.andbtiles.sample.utils.Consts;
 
 class HarvestSettingsFragment extends Fragment {
 
@@ -77,6 +77,21 @@ class HarvestSettingsFragment extends Fragment {
     public void onResume() {
         super.onResume();
         getActivity().getActionBar().setTitle(R.string.title_harvest_settings);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                getFragmentManager().popBackStack();
+                break;
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     void selectFile() {

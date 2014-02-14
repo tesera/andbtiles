@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -30,7 +31,6 @@ import com.tesera.andbtiles.callbacks.AndbtilesCallback;
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.pojos.TileJson;
 import com.tesera.andbtiles.sample.R;
-import com.tesera.andbtiles.sample.adapters.MBTilesAdapter;
 import com.tesera.andbtiles.sample.adapters.MapsAdapter;
 import com.tesera.andbtiles.sample.callbacks.ActivityCallback;
 import com.tesera.andbtiles.sample.utils.Consts;
@@ -49,6 +49,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 class InternetProviderFragment extends Fragment {
 
@@ -78,33 +79,20 @@ class InternetProviderFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View contentView = inflater.inflate(R.layout.fragment_internet, null);
-
         mMBTilesList = (ListView) contentView.findViewById(android.R.id.list);
-        mMBTilesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                MapItem mapItem = (MapItem) parent.getAdapter().getItem(position);
-                // this is a url to a .mbtiles file
-                if (mapItem.getJsonData() == null)
-                    selectFile();
-                    // this is a map from TileJSON so advance to cache options screen
-                else {
-                    CacheSettingsFragment fragment = new CacheSettingsFragment();
-                    fragment.setmMapItem(mapItem);
-                    getFragmentManager().beginTransaction()
-                            .replace(R.id.container, fragment)
-                            .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-                            .addToBackStack(null)
-                            .commit();
-                }
-            }
-        });
-
         // check for endpoint data cache
-        String jsonResponse = Utils.getStringFromPrefs(getActivity(), Consts.PREF_KEY_JSON_ENDPOINT_CACHE);
-        if (jsonResponse != null) {
-            MapsAdapter mapsAdapter = new MapsAdapter(getActivity(), parseJsonResponse(jsonResponse));
-            mMBTilesList.setAdapter(mapsAdapter);
+        Set<String> cachedUrls = Utils.getStringSetFromPrefs(getActivity(), Consts.PREF_KEY_CACHED_URLS);
+        if (cachedUrls != null && !cachedUrls.isEmpty()) {
+            ArrayAdapter<String> urlsAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1, new ArrayList<>(cachedUrls));
+            mMBTilesList.setAdapter(urlsAdapter);
+            mMBTilesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    FetchURL task = new FetchURL();
+                    task.execute((String) parent.getAdapter().getItem(position));
+                    mUrl.setText((String) parent.getAdapter().getItem(position));
+                }
+            });
         }
 
         // setup the fetch button
@@ -124,7 +112,6 @@ class InternetProviderFragment extends Fragment {
                 task.execute(mUrl.getText().toString());
             }
         });
-
         mUrl = (EditText) contentView.findViewById(R.id.edit_url);
 
         return contentView;
@@ -154,10 +141,14 @@ class InternetProviderFragment extends Fragment {
             @Override
             public boolean onQueryTextChange(String newText) {
                 // filter results only if we have an adapter
-                if (mMBTilesList != null
-                        || mMBTilesList.getAdapter() != null
-                        || ((MBTilesAdapter) mMBTilesList.getAdapter()).getFilter() != null)
-                    ((MapsAdapter) mMBTilesList.getAdapter()).getFilter().filter(newText);
+                try {
+                    if (mMBTilesList != null
+                            && mMBTilesList.getAdapter() != null
+                            && ((MapsAdapter) mMBTilesList.getAdapter()).getFilter() != null)
+                        ((MapsAdapter) mMBTilesList.getAdapter()).getFilter().filter(newText);
+                } catch (Exception e) {
+                    // wrong cast, ignore it
+                }
                 return false;
             }
         });
@@ -253,36 +244,6 @@ class InternetProviderFragment extends Fragment {
         mMBTilesList.setItemChecked(mMBTilesList.getCheckedItemPosition(), false);
     }
 
-    private List<MapItem> parseJsonResponse(String jsonResponse) {
-        // parse the response
-        List<TileJson> tileJsons = new ArrayList<>();
-        Gson gson = new Gson();
-        if (jsonResponse.startsWith("[")) {
-            // this is a JSON array
-            Type listOfDays = new TypeToken<List<TileJson>>() {
-            }.getType();
-            tileJsons = gson.fromJson(jsonResponse, listOfDays);
-        } else {
-            // this is a JSON object
-            TileJson tileJson = gson.fromJson(jsonResponse, TileJson.class);
-            tileJsons.add(tileJson);
-        }
-
-        // construct adapter items from the parsed JSON
-        List<MapItem> adapterList = new ArrayList<>();
-        for (TileJson tileJson : tileJsons) {
-            MapItem mapItem = new MapItem();
-            mapItem.setId(tileJson.getId());
-            mapItem.setName(tileJson.getName());
-            mapItem.setPath(tileJson.getDownload());
-            mapItem.setJsonData(gson.toJson(tileJson, TileJson.class));
-            if (tileJson.getFilesize() != null)
-                mapItem.setSize(tileJson.getFilesize().longValue());
-            adapterList.add(mapItem);
-        }
-        return adapterList;
-    }
-
     private class FetchURL extends AsyncTask<String, Void, List<MapItem>> {
 
         @Override
@@ -314,9 +275,10 @@ class InternetProviderFragment extends Fragment {
 
                 // get the response
                 HttpEntity responseEntity = response.getEntity();
-                // cache the json response
+
+                // cache the entered url
                 String jsonResponse = EntityUtils.toString(responseEntity);
-                Utils.setStringToPrefs(getActivity(), Consts.PREF_KEY_JSON_ENDPOINT_CACHE, jsonResponse);
+                Utils.setStringSetToPrefs(getActivity(), Consts.PREF_KEY_CACHED_URLS, params[0]);
 
                 return parseJsonResponse(jsonResponse);
             } catch (Exception e) {
@@ -350,6 +312,36 @@ class InternetProviderFragment extends Fragment {
             }
         }
 
+        private List<MapItem> parseJsonResponse(String jsonResponse) {
+            // parse the response
+            List<TileJson> tileJsons = new ArrayList<>();
+            Gson gson = new Gson();
+            if (jsonResponse.startsWith("[")) {
+                // this is a JSON array
+                Type listOfDays = new TypeToken<List<TileJson>>() {
+                }.getType();
+                tileJsons = gson.fromJson(jsonResponse, listOfDays);
+            } else {
+                // this is a JSON object
+                TileJson tileJson = gson.fromJson(jsonResponse, TileJson.class);
+                tileJsons.add(tileJson);
+            }
+
+            // construct adapter items from the parsed JSON
+            List<MapItem> adapterList = new ArrayList<>();
+            for (TileJson tileJson : tileJsons) {
+                MapItem mapItem = new MapItem();
+                mapItem.setId(tileJson.getId());
+                mapItem.setName(tileJson.getName());
+                mapItem.setPath(tileJson.getDownload());
+                mapItem.setJsonData(gson.toJson(tileJson, TileJson.class));
+                if (tileJson.getFilesize() != null)
+                    mapItem.setSize(tileJson.getFilesize().longValue());
+                adapterList.add(mapItem);
+            }
+            return adapterList;
+        }
+
         @Override
         protected void onPostExecute(List<MapItem> result) {
             if (!isAdded())
@@ -361,9 +353,28 @@ class InternetProviderFragment extends Fragment {
                 Toast.makeText(getActivity(), getString(R.string.crouton_fetch_error), Toast.LENGTH_SHORT).show();
                 return;
             }
-            // display the results
+            // display the results and setup the click listener
             MapsAdapter mapsAdapter = new MapsAdapter(getActivity(), result);
             mMBTilesList.setAdapter(mapsAdapter);
+            mMBTilesList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    MapItem mapItem = (MapItem) parent.getAdapter().getItem(position);
+                    // this is a url to a .mbtiles file
+                    if (mapItem.getJsonData() == null)
+                        selectFile();
+                        // this is a map from TileJSON so advance to cache options screen
+                    else {
+                        CacheSettingsFragment fragment = new CacheSettingsFragment();
+                        fragment.setmMapItem(mapItem);
+                        getFragmentManager().beginTransaction()
+                                .replace(R.id.container, fragment)
+                                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                                .addToBackStack(null)
+                                .commit();
+                    }
+                }
+            });
 
             super.onPostExecute(result);
         }

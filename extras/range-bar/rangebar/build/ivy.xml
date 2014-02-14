@@ -1,0 +1,31 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
+  <info organisation="com.tesera.andbtiles" module="rangebar" revision="1.0.1" status="integration" publication="20140213112657">
+    <description/>
+  </info>
+  <configurations>
+    <conf name="_debugApk" visibility="public" extends="apk,compile,debugApk,debugCompile"/>
+    <conf name="_debugCompile" visibility="public" extends="compile,debugCompile,debugProvided,provided"/>
+    <conf name="_debugTestApk" visibility="public" extends="_debugApk,_debugCompile,instrumentTestApk,instrumentTestCompile"/>
+    <conf name="_debugTestCompile" visibility="public" extends="_debugCompile,instrumentTestCompile,instrumentTestProvided"/>
+    <conf name="_releaseApk" visibility="public" extends="apk,compile,releaseApk,releaseCompile"/>
+    <conf name="_releaseCompile" visibility="public" extends="compile,provided,releaseCompile,releaseProvided"/>
+    <conf name="apk" visibility="private" description="Classpath packaged with the compiled main classes." extends="compile"/>
+    <conf name="archives" visibility="public" description="Configuration for archive artifacts."/>
+    <conf name="compile" visibility="private" description="Classpath for compiling the main sources."/>
+    <conf name="debugApk" visibility="private" description="Classpath packaged with the compiled debug classes." extends="debugCompile"/>
+    <conf name="debugCompile" visibility="private" description="Classpath for compiling the debug sources."/>
+    <conf name="debugProvided" visibility="private" description="Classpath for only compiling the debug sources."/>
+    <conf name="default" visibility="public" description="Configuration for default artifacts." extends="apk,releaseApk"/>
+    <conf name="instrumentTestApk" visibility="private" description="Classpath packaged with the compiled instrumentTest classes." extends="instrumentTestCompile"/>
+    <conf name="instrumentTestCompile" visibility="private" description="Classpath for compiling the instrumentTest sources."/>
+    <conf name="instrumentTestProvided" visibility="private" description="Classpath for only compiling the instrumentTest sources."/>
+    <conf name="provided" visibility="private" description="Classpath for only compiling the main sources."/>
+    <conf name="releaseApk" visibility="private" description="Classpath packaged with the compiled release classes." extends="releaseCompile"/>
+    <conf name="releaseCompile" visibility="private" description="Classpath for compiling the release sources."/>
+    <conf name="releaseProvided" visibility="private" description="Classpath for only compiling the release sources."/>
+  </configurations>
+  <publications>
+    <artifact name="rangebar" type="aar" ext="aar" conf="archives,default"/>
+  </publications>
+</ivy-module>
