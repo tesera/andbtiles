@@ -1,6 +1,6 @@
 <?xml version="1.1" encoding="UTF-8"?>
 <ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
-  <info organisation="com.tesera.andbtiles" module="rangebar" revision="1.0.1" status="integration" publication="20140213112657">
+  <info organisation="com.tesera.andbtiles" module="rangebar" revision="1.0.2-SNAPSHOT" status="integration" publication="20140214133534">
     <description/>
   </info>
   <configurations>
