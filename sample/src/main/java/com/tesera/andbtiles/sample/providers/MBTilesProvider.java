@@ -7,7 +7,7 @@ import android.net.Uri;
 import com.google.android.gms.maps.model.Tile;
 import com.google.android.gms.maps.model.TileProvider;
 import com.tesera.andbtiles.pojos.MapMetadata;
-import com.tesera.andbtiles.sample.utils.Consts;
+import com.tesera.andbtiles.sample.utils.Const;
 import com.tesera.andbtiles.utils.TilesContract;
 
 public class MBTilesProvider implements TileProvider {
@@ -62,7 +62,7 @@ public class MBTilesProvider implements TileProvider {
 
     private Tile cursorToMapItem(Cursor cursor) {
         // get the blob data i.e. the .png image
-        return new Tile(Consts.TILE_SIZE, Consts.TILE_SIZE, cursor.getBlob(cursor.getColumnIndex(TilesContract.COLUMN_TILE_DATA)));
+        return new Tile(Const.TILE_SIZE, Const.TILE_SIZE, cursor.getBlob(cursor.getColumnIndex(TilesContract.COLUMN_TILE_DATA)));
     }
 
     private MapMetadata cursorToMapMetadata(Cursor cursor) {

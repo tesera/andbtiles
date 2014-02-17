@@ -26,8 +26,9 @@ import com.tesera.andbtiles.exceptions.AndbtilesException;
 import com.tesera.andbtiles.sample.R;
 import com.tesera.andbtiles.sample.adapters.MBTilesAdapter;
 import com.tesera.andbtiles.sample.callbacks.ActivityCallback;
-import com.tesera.andbtiles.sample.utils.Consts;
+import com.tesera.andbtiles.sample.utils.Const;
 import com.tesera.andbtiles.sample.utils.Utils;
+import com.tesera.andbtiles.utils.Consts;
 
 import java.io.File;
 import java.lang.reflect.Type;
@@ -83,7 +84,7 @@ public class LocaProviderFragment extends Fragment {
                 // launch a pick file intent
                 Intent pickFileIntent = new Intent(Intent.ACTION_GET_CONTENT);
                 pickFileIntent.setType("file/*");
-                startActivityForResult(pickFileIntent, Consts.RESULT_PICK_FILE);
+                startActivityForResult(pickFileIntent, Const.RESULT_PICK_FILE);
             }
         });
         return contentView;
@@ -147,7 +148,7 @@ public class LocaProviderFragment extends Fragment {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode != Consts.RESULT_PICK_FILE || data == null || data.getDataString() == null)
+        if (requestCode != Const.RESULT_PICK_FILE || data == null || data.getDataString() == null)
             return;
         // get the file from data string URI and extract the file name from it
         try {
@@ -235,7 +236,7 @@ public class LocaProviderFragment extends Fragment {
         protected void onPreExecute() {
             mMBTilesList.setEmptyView(mEmptyView);
             // try the cache for immediate results display
-            String jsonFileCache = Utils.getStringFromPrefs(getActivity(), Consts.PREF_KEY_LOCAL_FILES_CACHE);
+            String jsonFileCache = Utils.getStringFromPrefs(getActivity(), Const.PREF_KEY_LOCAL_FILES_CACHE);
             if (jsonFileCache == null)
                 return;
             // de-serialize the results
@@ -276,7 +277,7 @@ public class LocaProviderFragment extends Fragment {
             Type listOfDays = new TypeToken<List<File>>() {
             }.getType();
             String jsonFilesCache = gson.toJson(files, listOfDays);
-            Utils.setStringToPrefs(getActivity(), Consts.PREF_KEY_LOCAL_FILES_CACHE, jsonFilesCache);
+            Utils.setStringToPrefs(getActivity(), Const.PREF_KEY_LOCAL_FILES_CACHE, jsonFilesCache);
             super.onPostExecute(files);
         }
     }

@@ -7,6 +7,7 @@ public class Consts {
     public static final String FOLDER_ROOT = "andtbiles";
     public static final String EXTENSION_MBTILES = "mbtiles";
     public static final String EXTENSION_JSON = "json";
+    public static final String EXTENSION_GEO_JSON = "json";
 
     // cache methods
     public static final int CACHE_NO = 0;

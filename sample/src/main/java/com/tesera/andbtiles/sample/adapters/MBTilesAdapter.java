@@ -11,7 +11,7 @@ import android.widget.Filterable;
 import android.widget.TextView;
 
 import com.tesera.andbtiles.sample.R;
-import com.tesera.andbtiles.sample.utils.Consts;
+import com.tesera.andbtiles.utils.Consts;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -21,8 +21,8 @@ import java.util.List;
 public class MBTilesAdapter extends BaseAdapter implements Filterable {
 
     private final Context mContext;
-    private List<File> mFiles;
     private final List<File> mFilesOriginal;
+    private List<File> mFiles;
 
     public MBTilesAdapter(Context mContext, List<File> mFiles) {
         this.mContext = mContext;

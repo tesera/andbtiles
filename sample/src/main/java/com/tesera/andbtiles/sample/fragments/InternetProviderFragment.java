@@ -33,8 +33,9 @@ import com.tesera.andbtiles.pojos.TileJson;
 import com.tesera.andbtiles.sample.R;
 import com.tesera.andbtiles.sample.adapters.MapsAdapter;
 import com.tesera.andbtiles.sample.callbacks.ActivityCallback;
-import com.tesera.andbtiles.sample.utils.Consts;
+import com.tesera.andbtiles.sample.utils.Const;
 import com.tesera.andbtiles.sample.utils.Utils;
+import com.tesera.andbtiles.utils.Consts;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpEntity;
@@ -81,7 +82,7 @@ class InternetProviderFragment extends Fragment {
         View contentView = inflater.inflate(R.layout.fragment_internet, null);
         mMBTilesList = (ListView) contentView.findViewById(android.R.id.list);
         // check for endpoint data cache
-        Set<String> cachedUrls = Utils.getStringSetFromPrefs(getActivity(), Consts.PREF_KEY_CACHED_URLS);
+        Set<String> cachedUrls = Utils.getStringSetFromPrefs(getActivity(), Const.PREF_KEY_CACHED_URLS);
         if (cachedUrls != null && !cachedUrls.isEmpty()) {
             ArrayAdapter<String> urlsAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1, new ArrayList<>(cachedUrls));
             mMBTilesList.setAdapter(urlsAdapter);
@@ -278,7 +279,7 @@ class InternetProviderFragment extends Fragment {
 
                 // cache the entered url
                 String jsonResponse = EntityUtils.toString(responseEntity);
-                Utils.setStringSetToPrefs(getActivity(), Consts.PREF_KEY_CACHED_URLS, params[0]);
+                Utils.setStringSetToPrefs(getActivity(), Const.PREF_KEY_CACHED_URLS, params[0]);
 
                 return parseJsonResponse(jsonResponse);
             } catch (Exception e) {

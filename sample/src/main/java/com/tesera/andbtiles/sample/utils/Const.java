@@ -1,11 +1,7 @@
 package com.tesera.andbtiles.sample.utils;
 
 
-public class Consts {
-
-    // file management
-    public static final String EXTENSION_MBTILES = "mbtiles";
-    public static final String EXTENSION_GEO_JSON = "geojson";
+public class Const {
     // results
     public static final int RESULT_PICK_FILE = 100;
     // preferences

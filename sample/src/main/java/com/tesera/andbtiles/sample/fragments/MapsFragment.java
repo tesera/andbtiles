@@ -22,7 +22,7 @@ import com.tesera.andbtiles.sample.MapActivity;
 import com.tesera.andbtiles.sample.R;
 import com.tesera.andbtiles.sample.adapters.MapsAdapter;
 import com.tesera.andbtiles.sample.loaders.MapsDatabaseLoader;
-import com.tesera.andbtiles.sample.utils.Consts;
+import com.tesera.andbtiles.sample.utils.Const;
 
 import java.util.List;
 
@@ -48,8 +48,8 @@ public class MapsFragment extends Fragment implements LoaderManager.LoaderCallba
                 MapItem mapItem = (MapItem) parent.getAdapter().getItem(position);
 
                 Intent mapIntent = new Intent(getActivity(), MapActivity.class);
-                mapIntent.putExtra(Consts.EXTRA_PATH, mapItem.getPath());
-                mapIntent.putExtra(Consts.EXTRA_NAME, mapItem.getId());
+                mapIntent.putExtra(Const.EXTRA_PATH, mapItem.getPath());
+                mapIntent.putExtra(Const.EXTRA_NAME, mapItem.getId());
                 startActivity(mapIntent);
             }
         });

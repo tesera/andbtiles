@@ -19,7 +19,7 @@ import com.tesera.andbtiles.callbacks.AndbtilesCallback;
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.sample.R;
 import com.tesera.andbtiles.sample.callbacks.ActivityCallback;
-import com.tesera.andbtiles.sample.utils.Consts;
+import com.tesera.andbtiles.sample.utils.Const;
 
 
 class CacheSettingsFragment extends Fragment {
@@ -94,7 +94,7 @@ class CacheSettingsFragment extends Fragment {
                 // set the cache method
                 mMapItem.setCacheMode(mCacheGroup.indexOfChild(mCacheGroup.findViewById(mCacheGroup.getCheckedRadioButtonId())));
                 switch (mMapItem.getCacheMode()) {
-                    case Consts.CACHE_FULL:
+                    case Const.CACHE_FULL:
                         HarvestSettingsFragment fragment = new HarvestSettingsFragment();
                         fragment.setmMapItem(mMapItem);
                         getFragmentManager().beginTransaction()
@@ -103,8 +103,8 @@ class CacheSettingsFragment extends Fragment {
                                 .addToBackStack(null)
                                 .commit();
                         return;
-                    case Consts.CACHE_NO:
-                    case Consts.CACHE_ON_DEMAND:
+                    case Const.CACHE_NO:
+                    case Const.CACHE_ON_DEMAND:
                         andbtiles.addRemoteJsonTileProvider(mMapItem.getTileJsonString(), mMapItem.getId(),
                                 mMapItem.getCacheMode(), new AndbtilesCallback() {
                             @Override
@@ -125,7 +125,7 @@ class CacheSettingsFragment extends Fragment {
                             }
                         });
                         break;
-                    case Consts.CACHE_DATA:
+                    case Const.CACHE_DATA:
                         andbtiles.addRemoteMbilesProvider(mMapItem.getPath(), new AndbtilesCallback() {
                             @Override
                             public void onSuccess() {

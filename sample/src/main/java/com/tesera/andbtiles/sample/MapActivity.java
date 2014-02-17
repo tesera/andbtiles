@@ -18,7 +18,7 @@ import com.tesera.andbtiles.Andbtiles;
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.pojos.MapMetadata;
 import com.tesera.andbtiles.sample.providers.MBTilesProvider;
-import com.tesera.andbtiles.sample.utils.Consts;
+import com.tesera.andbtiles.sample.utils.Const;
 import com.tesera.andbtiles.utils.TilesContract;
 
 import java.io.File;
@@ -34,7 +34,7 @@ public class MapActivity extends Activity {
         setContentView(R.layout.activity_map);
 
         // get the database path
-        mMapName = getIntent().getStringExtra(Consts.EXTRA_NAME);
+        mMapName = getIntent().getStringExtra(Const.EXTRA_NAME);
         if (mMapName == null) {
             Toast.makeText(this, getString(R.string.crouton_invalid_file), Toast.LENGTH_SHORT).show();
             finish();

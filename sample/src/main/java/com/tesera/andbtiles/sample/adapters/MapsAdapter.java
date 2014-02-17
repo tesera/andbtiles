@@ -12,7 +12,7 @@ import android.widget.TextView;
 
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.sample.R;
-import com.tesera.andbtiles.sample.utils.Consts;
+import com.tesera.andbtiles.utils.Consts;
 
 import java.util.ArrayList;
 import java.util.List;
