@@ -186,7 +186,7 @@ public class LocaProviderFragment extends Fragment {
             public void onClick(View v) {
                 Andbtiles andbtiles = new Andbtiles(getActivity());
                 try {
-                    andbtiles.addLocalMbTilesProvider(mMBTilesFile.getAbsolutePath());
+                    andbtiles.addLocalMbTilesProvider(mMBTilesFile.getAbsolutePath(), mMBTilesFile.getAbsolutePath().replace(Consts.EXTENSION_MBTILES, Consts.EXTENSION_GEO_JSON));
                 } catch (AndbtilesException e) {
                     e.printStackTrace();
                     Toast.makeText(getActivity(), e.getMessage(), Toast.LENGTH_SHORT).show();

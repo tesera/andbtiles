@@ -6,9 +6,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 class MapsDatabaseHelper extends SQLiteOpenHelper {
 
-    // Database
-    private static final String DATABASE_NAME = "maps.db";
-    private static final int DATABASE_VERSION = 1;
     // Tables
     public static final String TABLE_MAPS = "maps";
     // Columns
@@ -17,8 +14,8 @@ class MapsDatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_PATH = "path";
     public static final String COLUMN_CACHE_MODE = "cache_mode";
     public static final String COLUMN_SIZE = "size";
-    public static final String COLUMN_JSON_DATA = "json_data";
-
+    public static final String COLUMN_TILE_JSON = "tile_json";
+    public static final String COLUMN_GEO_JSON = "geo_json";
     // Database creation statement
     private static final String DATABASE_CREATE = "create table " + TABLE_MAPS + "(" +
             COLUMN_ID + " text unique primary key, " +
@@ -26,7 +23,11 @@ class MapsDatabaseHelper extends SQLiteOpenHelper {
             COLUMN_PATH + " text, " +
             COLUMN_CACHE_MODE + " integer, " +
             COLUMN_SIZE + " integer, " +
-            COLUMN_JSON_DATA + " text);";
+            COLUMN_TILE_JSON + " text," +
+            COLUMN_GEO_JSON + " text);";
+    // Database
+    private static final String DATABASE_NAME = "maps.db";
+    private static final int DATABASE_VERSION = 1;
 
     public MapsDatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);

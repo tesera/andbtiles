@@ -1,6 +1,8 @@
 package com.tesera.andbtiles.pojos;
 
 
+import com.google.gson.Gson;
+
 public class MapItem {
 
     private String id;
@@ -8,7 +10,8 @@ public class MapItem {
     private String name;
     private int cacheMode;
     private long size;
-    private String jsonData;
+    private String tileJsonString;
+    private String geoJsonString;
 
     public String getId() {
         return id;
@@ -50,11 +53,43 @@ public class MapItem {
         this.size = size;
     }
 
-    public String getJsonData() {
-        return jsonData;
+    public String getTileJsonString() {
+        return tileJsonString;
     }
 
-    public void setJsonData(String jsonData) {
-        this.jsonData = jsonData;
+    public void setTileJsonString(String tileJsonString) {
+        this.tileJsonString = tileJsonString;
+    }
+
+    public String getGeoJsonString() {
+        return geoJsonString;
+    }
+
+    public void setGeoJsonString(String geoJsonString) {
+        this.geoJsonString = geoJsonString;
+    }
+
+    public TileJson getTileJson() {
+        if (tileJsonString == null || tileJsonString.length() == 0)
+            return null;
+
+        try {
+            return new Gson().fromJson(tileJsonString, TileJson.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public GeoJson getGeoJson() {
+        if (geoJsonString == null || geoJsonString.length() == 0)
+            return null;
+
+        try {
+            return new Gson().fromJson(geoJsonString, GeoJson.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

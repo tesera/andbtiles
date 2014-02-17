@@ -82,7 +82,7 @@ public class TilesContentProvider extends ContentProvider {
                     // match the database center value
                     // the center values are in format lon,lat,zoom
                     // ex. -63.1275,45.1936,9
-                    TileJson tileJson = mGson.fromJson(mapItem.getJsonData(), TileJson.class);
+                    TileJson tileJson = mGson.fromJson(mapItem.getTileJsonString(), TileJson.class);
 
                     String[] columnNames = {TilesContract.COLUMN_NAME, TilesContract.COLUMN_VALUE};
                     String[] columnData = {"center", Arrays.toString(tileJson.getCenter().toArray()).replace("[", "").replace("]", "").replace(" ", "")};
@@ -96,7 +96,7 @@ public class TilesContentProvider extends ContentProvider {
                 int x = Integer.parseInt(selectionArgs[1]);
                 // we need to switch back from TSM to OSM coordinates since web fetching works in that format
                 int y = (int) (Math.pow(2, z) - Double.parseDouble(selectionArgs[2]) - 1);
-                TileJson tileJson = mGson.fromJson(mapItem.getJsonData(), TileJson.class);
+                TileJson tileJson = mGson.fromJson(mapItem.getTileJsonString(), TileJson.class);
                 byte[] tileData = getTileBytes(z, x, y, tileJson);
                 // return the cursor containing the tile_data
                 return getCursorWithTile(tileData);
@@ -113,7 +113,7 @@ public class TilesContentProvider extends ContentProvider {
                 x = Integer.parseInt(selectionArgs[1]);
                 // we need to switch back from TSM to OSM coordinates since web fetching works in that format
                 y = (int) (Math.pow(2, z) - Double.parseDouble(selectionArgs[2]) - 1);
-                tileJson = mGson.fromJson(mapItem.getJsonData(), TileJson.class);
+                tileJson = mGson.fromJson(mapItem.getTileJsonString(), TileJson.class);
                 tileData = getTileBytes(z, x, y, tileJson);
 
                 final byte[] tileDataFinal = tileData;

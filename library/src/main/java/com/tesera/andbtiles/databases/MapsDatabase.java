@@ -21,7 +21,8 @@ public class MapsDatabase {
             MapsDatabaseHelper.COLUMN_PATH,
             MapsDatabaseHelper.COLUMN_CACHE_MODE,
             MapsDatabaseHelper.COLUMN_SIZE,
-            MapsDatabaseHelper.COLUMN_JSON_DATA
+            MapsDatabaseHelper.COLUMN_TILE_JSON,
+            MapsDatabaseHelper.COLUMN_GEO_JSON
     };
     private SQLiteDatabase database;
 
@@ -48,7 +49,7 @@ public class MapsDatabase {
     }
 
     public void insertItems(MapItem... items) {
-        String sql = "INSERT INTO " + MapsDatabaseHelper.TABLE_MAPS + " VALUES (?,?,?,?,?,?);";
+        String sql = "INSERT INTO " + MapsDatabaseHelper.TABLE_MAPS + " VALUES (?,?,?,?,?,?,?);";
         SQLiteStatement statement = database.compileStatement(sql);
         database.beginTransaction();
         for (MapItem item : items) {
@@ -58,7 +59,8 @@ public class MapsDatabase {
             statement.bindString(3, item.getPath() == null ? "" : item.getPath());
             statement.bindLong(4, item.getCacheMode());
             statement.bindLong(5, item.getSize());
-            statement.bindString(6, item.getJsonData() == null ? "" : item.getJsonData());
+            statement.bindString(6, item.getTileJsonString() == null ? "" : item.getTileJsonString());
+            statement.bindString(7, item.getGeoJsonString() == null ? "" : item.getGeoJsonString());
             try {
                 statement.execute();
             } catch (Exception e) {
@@ -78,7 +80,8 @@ public class MapsDatabase {
         args.put(MapsDatabaseHelper.COLUMN_PATH, item.getPath());
         args.put(MapsDatabaseHelper.COLUMN_CACHE_MODE, item.getCacheMode());
         args.put(MapsDatabaseHelper.COLUMN_SIZE, item.getSize());
-        args.put(MapsDatabaseHelper.COLUMN_JSON_DATA, item.getJsonData());
+        args.put(MapsDatabaseHelper.COLUMN_TILE_JSON, item.getTileJsonString());
+        args.put(MapsDatabaseHelper.COLUMN_GEO_JSON, item.getGeoJsonString());
         int result = database.update(MapsDatabaseHelper.TABLE_MAPS, args, MapsDatabaseHelper.COLUMN_ID + " like '" + item.getId() + "'", null);
         return result != 0;
     }
@@ -114,7 +117,8 @@ public class MapsDatabase {
         mapItem.setPath(cursor.getString(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_PATH)));
         mapItem.setCacheMode(cursor.getInt(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_CACHE_MODE)));
         mapItem.setSize(cursor.getLong(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_SIZE)));
-        mapItem.setJsonData(cursor.getString(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_JSON_DATA)));
+        mapItem.setTileJsonString(cursor.getString(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_TILE_JSON)));
+        mapItem.setGeoJsonString(cursor.getString(cursor.getColumnIndex(MapsDatabaseHelper.COLUMN_GEO_JSON)));
         return mapItem;
     }
 }

@@ -33,7 +33,7 @@ class HarvestSettingsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View contentView = inflater.inflate(R.layout.fragment_harvest_settings, null);
 
-        String tileJsonString = mMapItem.getJsonData();
+        String tileJsonString = mMapItem.getTileJsonString();
         if (tileJsonString == null)
             getFragmentManager().popBackStack();
         mTileJson = new Gson().fromJson(tileJsonString, TileJson.class);
@@ -110,7 +110,7 @@ class HarvestSettingsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Andbtiles andbtiles = new Andbtiles(getActivity());
-                andbtiles.addRemoteJsonTileProvider(mMapItem.getJsonData(), mMapItem.getName(), mMapItem.getCacheMode(), Integer.valueOf(mMinZoom.getText().toString()),
+                andbtiles.addRemoteJsonTileProvider(mMapItem.getTileJsonString(), mMapItem.getName(), mMapItem.getCacheMode(), Integer.valueOf(mMinZoom.getText().toString()),
                         Integer.valueOf(mMaxZoom.getText().toString()), new AndbtilesCallback() {
                     @Override
                     public void onSuccess() {

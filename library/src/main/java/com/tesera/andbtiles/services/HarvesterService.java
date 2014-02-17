@@ -11,7 +11,6 @@ import android.database.sqlite.SQLiteStatement;
 import android.support.v4.app.NotificationCompat;
 
 import com.google.gson.Gson;
-import com.tesera.andbtiles.R;
 import com.tesera.andbtiles.databases.MapsDatabase;
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.pojos.TileJson;
@@ -46,7 +45,7 @@ public class HarvesterService extends IntentService {
     protected void onHandleIntent(Intent intent) {
         // get the tile json data
         MapItem mapItem = new Gson().fromJson(intent.getStringExtra(Consts.EXTRA_JSON), MapItem.class);
-        mTileJson = new Gson().fromJson(mapItem.getJsonData(), TileJson.class);
+        mTileJson = new Gson().fromJson(mapItem.getTileJsonString(), TileJson.class);
 
         mDatabase = SQLiteDatabase.openOrCreateDatabase(mapItem.getPath(), null);
         ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
@@ -56,7 +55,7 @@ public class HarvesterService extends IntentService {
         NotificationManager mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setSmallIcon(android.R.drawable.stat_sys_download)
-                .setContentTitle(getString(R.string.toast_harvesting))
+                .setContentTitle("Harvesting tiles…")
                 .setProgress(maxProgress, 0, false);
         mNotifyManager.notify(123, builder.build());
 
@@ -128,7 +127,7 @@ public class HarvesterService extends IntentService {
         // inform the user for completed harvest
         builder = new NotificationCompat.Builder(this)
                 .setSmallIcon(android.R.drawable.stat_sys_download_done)
-                .setContentTitle(getString(R.string.toast_download_complete))
+                .setContentTitle("Download complete")
                 .setContentText(mapItem.getPath())
                 .setAutoCancel(true)
                 .setDefaults(Notification.DEFAULT_ALL);

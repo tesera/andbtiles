@@ -21,6 +21,7 @@ import com.tesera.andbtiles.callbacks.AndbtilesCallback;
 import com.tesera.andbtiles.databases.MBTilesDatabase;
 import com.tesera.andbtiles.databases.MapsDatabase;
 import com.tesera.andbtiles.exceptions.AndbtilesException;
+import com.tesera.andbtiles.pojos.GeoJson;
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.pojos.TileJson;
 import com.tesera.andbtiles.services.HarvesterService;
@@ -36,8 +37,13 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -99,7 +105,11 @@ public class Andbtiles {
                 // try a local file instead since
                 // the remote files have ids like <user>.<mapname>
                 // the remote files have ids like <mapname>.mbtiles
-                mapId = mapId.split("\\.")[1] + ".mbtiles";
+                try {
+                    mapId = mapId.split("\\.")[1] + ".mbtiles";
+                } catch (Exception e) {
+                    throw new AndbtilesException("Map <" + mapId + "> with not found in maps.");
+                }
                 mapItem = mMapsDatabase.findMapById(mapId);
                 if (mapItem == null)
                     throw new AndbtilesException("Map <" + mapId + "> with not found in maps.");
@@ -131,7 +141,7 @@ public class Andbtiles {
                     return cursor.getBlob(cursor.getColumnIndex(TilesContract.COLUMN_TILE_DATA));
                 else {
                     // make final variables for accessing from worker scope
-                    final TileJson tileJsonFinal = mGson.fromJson(mapItem.getJsonData(), TileJson.class);
+                    final TileJson tileJsonFinal = mGson.fromJson(mapItem.getTileJsonString(), TileJson.class);
                     final int zFinal = z;
                     final int xFinal = x;
                     final int yFinal = y;
@@ -220,18 +230,21 @@ public class Andbtiles {
      * Adds local .mbtiles file as map provider.
      * The pathToMbTilesFile argument must specify an absolute path to a
      * file on the external storage that has an .mbtiles file extension.
+     * The pathToGeoJsonFile is optional and can be null. It is used to associate
+     * GeoJson data to the map provider.
      * <p/>
      * This method always returns immediately or throws an exception if the file
      * is not found on the storage system or the storage system is not mounted.
      *
      * @param pathToMbTilesFile an absolute path to the .mbtiles file on the storage system
+     * @param pathToGeoJsonFile [Optional] an absolute path to the .geojson file on the storage system
      * @throws com.tesera.andbtiles.exceptions.AndbtilesException
      */
-    public void addLocalMbTilesProvider(String pathToMbTilesFile) throws AndbtilesException {
+    public void addLocalMbTilesProvider(String pathToMbTilesFile, String pathToGeoJsonFile) throws AndbtilesException {
         // try to find the file with the specified path
         File mbTilesFile = new File(pathToMbTilesFile);
         if (!mbTilesFile.exists())
-            throw new AndbtilesException(String.format(mContext.getString(R.string.exception_file_not_found), pathToMbTilesFile));
+            throw new AndbtilesException(String.format("File not found: %s", pathToMbTilesFile));
 
         // create new map item for insertion
         MapItem mapItem = new MapItem();
@@ -240,7 +253,52 @@ public class Andbtiles {
         mapItem.setName(mbTilesFile.getName());
         mapItem.setCacheMode(Consts.CACHE_DATA);
         mapItem.setSize(mbTilesFile.length());
+        // save the map if no geo json data is associated
+        if (pathToGeoJsonFile == null) {
+            insertMapItem(mapItem);
+            return;
+        }
 
+        // find the geo json file for parsing
+        File geoJsonFile = new File(pathToGeoJsonFile);
+        if (!mbTilesFile.exists())
+            return;
+
+        // open the geo json file
+        InputStream inputStream;
+        try {
+            inputStream = new FileInputStream(geoJsonFile.getAbsolutePath());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        // read the geo json file
+        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+        String geoJsonString = "";
+        StringBuilder stringBuilder = new StringBuilder();
+        try {
+            while ((geoJsonString = bufferedReader.readLine()) != null)
+                stringBuilder.append(geoJsonString);
+            inputStream.close();
+            inputStreamReader.close();
+            bufferedReader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        // try to parse the json file
+        try {
+            new Gson().fromJson(geoJsonString, GeoJson.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        // save the map
+        mapItem.setGeoJsonString(stringBuilder.toString());
         insertMapItem(mapItem);
     }
 
@@ -259,7 +317,7 @@ public class Andbtiles {
         // do a URL and extension check
         if (!urlToMbTilesFile.matches(Patterns.WEB_URL.pattern()) || !urlToMbTilesFile.endsWith(Consts.EXTENSION_MBTILES))
             callback.onError(new AndbtilesException
-                    (String.format(mContext.getString(R.string.exception_invalid_url_mbtiles), urlToMbTilesFile)));
+                    (String.format("Invalid URL to .mbtiles file: %s", urlToMbTilesFile)));
 
         downloadMbTilesFile(mContext, urlToMbTilesFile, callback);
     }
@@ -429,7 +487,7 @@ public class Andbtiles {
 
                     } else
                         callback.onError(new AndbtilesException(
-                                String.format(mContext.getString(R.string.exception_download_error), urlToFile)));
+                                String.format("Cannot download %s", urlToFile)));
                 }
                 // unregister the receiver since the download is done
                 context.unregisterReceiver(this);
@@ -544,7 +602,8 @@ public class Andbtiles {
                         mapItem.setCacheMode(Integer.parseInt(params[2]));
                         mapItem.setPath(tileJson.getDownload());
                         mapItem.setSize(tileJson.getFilesize() == null ? 0 : tileJson.getFilesize().longValue());
-                        mapItem.setJsonData(gson.toJson(tileJson, TileJson.class));
+                        mapItem.setTileJsonString(gson.toJson(tileJson, TileJson.class));
+                        mapItem.setGeoJsonString(parseGeoJsonString(tileJson.getData().get(0)));
 
                         // create a local path for database
                         String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
@@ -567,7 +626,7 @@ public class Andbtiles {
                                 if (params[3] != null) {
                                     tileJson.setMinzoom(Integer.valueOf(params[3]));
                                     tileJson.setMaxzoom(Integer.valueOf(params[4]));
-                                    mapItem.setJsonData(gson.toJson(tileJson, TileJson.class));
+                                    mapItem.setTileJsonString(gson.toJson(tileJson, TileJson.class));
                                 }
                                 // insert metadata
                                 mapItem.setPath(path);
@@ -590,6 +649,30 @@ public class Andbtiles {
             } catch (Exception e) {
                 e.printStackTrace();
                 return e.getMessage();
+            }
+        }
+
+        private String parseGeoJsonString(String urlToGeoJsonEndpoint) {
+            if (urlToGeoJsonEndpoint == null)
+                return "";
+
+            try {
+                HttpClient client = new DefaultHttpClient();
+                // execute GET method
+                HttpGet request = new HttpGet(urlToGeoJsonEndpoint);
+                HttpResponse response = client.execute(request);
+
+                // get the response
+                HttpEntity responseEntity = response.getEntity();
+                String jsonResponseWithWrapper = EntityUtils.toString(responseEntity);
+
+                // remove the JavaScript wrapper and try to parse it
+                String jsonResponse = jsonResponseWithWrapper.replace("grid(", "").replace(");", "");
+                new Gson().fromJson(jsonResponse, GeoJson.class);
+                return jsonResponse;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return "";
             }
         }
 
@@ -616,7 +699,7 @@ public class Andbtiles {
             mbTilesDatabase.open();
 
             // fill the metadata table
-            TileJson tileJson = new Gson().fromJson(mapItem.getJsonData(), TileJson.class);
+            TileJson tileJson = new Gson().fromJson(mapItem.getTileJsonString(), TileJson.class);
             Map<String, String> metadataMap = new HashMap<>();
             metadataMap.put("bounds", Arrays.toString(tileJson.getBounds().toArray()).replace("[", "").replace("]", "").replace(" ", ""));
             metadataMap.put("center", Arrays.toString(tileJson.getCenter().toArray()).replace("[", "").replace("]", "").replace(" ", ""));

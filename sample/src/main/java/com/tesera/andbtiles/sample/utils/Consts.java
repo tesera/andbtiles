@@ -5,7 +5,7 @@ public class Consts {
 
     // file management
     public static final String EXTENSION_MBTILES = "mbtiles";
-    public static final String EXTENSION_JSON = "json";
+    public static final String EXTENSION_GEO_JSON = "geojson";
     // results
     public static final int RESULT_PICK_FILE = 100;
     // preferences

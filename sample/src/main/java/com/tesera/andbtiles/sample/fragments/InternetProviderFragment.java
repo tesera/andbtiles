@@ -334,7 +334,7 @@ class InternetProviderFragment extends Fragment {
                 mapItem.setId(tileJson.getId());
                 mapItem.setName(tileJson.getName());
                 mapItem.setPath(tileJson.getDownload());
-                mapItem.setJsonData(gson.toJson(tileJson, TileJson.class));
+                mapItem.setTileJsonString(gson.toJson(tileJson, TileJson.class));
                 if (tileJson.getFilesize() != null)
                     mapItem.setSize(tileJson.getFilesize().longValue());
                 adapterList.add(mapItem);
@@ -361,7 +361,7 @@ class InternetProviderFragment extends Fragment {
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     MapItem mapItem = (MapItem) parent.getAdapter().getItem(position);
                     // this is a url to a .mbtiles file
-                    if (mapItem.getJsonData() == null)
+                    if (mapItem.getTileJsonString() == null)
                         selectFile();
                         // this is a map from TileJSON so advance to cache options screen
                     else {
