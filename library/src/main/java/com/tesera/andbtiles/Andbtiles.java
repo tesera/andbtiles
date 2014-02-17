@@ -188,7 +188,7 @@ public class Andbtiles {
     }
 
     /**
-     * Returns all tha maps saved as providers.
+     * Returns all the maps saved as providers.
      * <p/>
      * This method always returns immediately and returns a list of all MapItems
      * saved in the database or null if there is none.
@@ -224,6 +224,22 @@ public class Andbtiles {
         }
         mapsDatabase.close();
         return mapsList;
+    }
+
+    /**
+     * Returns the map uniquely identified with its id.
+     * <p/>
+     * This method always returns immediately and returns a MapItem
+     * or null if there is no map with that id in the database.
+     *
+     * @return a MapItem object or null if no map providers are added
+     * @see com.tesera.andbtiles.pojos.MapItem
+     */
+    public MapItem getMapById(String mapId) {
+        for (MapItem mapItem : getMaps())
+            if (mapItem.getId().equalsIgnoreCase(mapId))
+                return mapItem;
+        return null;
     }
 
     /**
