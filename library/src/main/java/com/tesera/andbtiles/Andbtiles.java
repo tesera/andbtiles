@@ -352,6 +352,8 @@ public class Andbtiles {
      * <br/>
      * Consts.CACHE_DATA_ONLY - only the private data (.mbtiles) is downloaded
      * <p/>
+     * The minZoom and maxZoom arguments are only taken into consideration when
+     * CACHE_FULL is selected for caching.
      * This method executes in a background thread and informs the main thread via the callback.
      *
      * @param urlToJsonTileEndpoint an absolute URL to the TileJSON endpoint on the web
@@ -387,15 +389,16 @@ public class Andbtiles {
      * @param urlToJsonTileEndpoint an absolute URL to the TileJSON endpoint on the web
      * @param mapId                 the unique id of a map that can be found at the endpoint
      * @param cacheMethod           one of the available cache methods
-     * @param minZoom               the minimum zoom as a harvest start point
-     * @param maxZoom               the maximum zoom as a harvest endpoint
+     * @param boundingBox           the southwest_lng,southwest_lat,northeast_lng,northeast_lat formatted bounding box. Can be null.
+     * @param minZoom               the minimum zoom as a harvest start point. Can be 0.
+     * @param maxZoom               the maximum zoom as a harvest endpoint. Can be 0.
      * @param callback              a callback for returning the background thread status
      * @see com.tesera.andbtiles.utils.Consts
      * @see com.tesera.andbtiles.callbacks.AndbtilesCallback
      */
-    public void addRemoteJsonTileProvider(String urlToJsonTileEndpoint, String mapId, int cacheMethod, int minZoom, int maxZoom, AndbtilesCallback callback) {
+    public void addRemoteJsonTileProvider(String urlToJsonTileEndpoint, String mapId, int cacheMethod, String boundingBox, int minZoom, int maxZoom, AndbtilesCallback callback) {
         ProcessTileJson task = new ProcessTileJson(callback);
-        task.execute(urlToJsonTileEndpoint, mapId, "" + cacheMethod, "" + minZoom, "" + maxZoom);
+        task.execute(urlToJsonTileEndpoint, mapId, "" + cacheMethod, boundingBox, "" + minZoom, "" + maxZoom);
     }
 
     /**
@@ -638,12 +641,22 @@ public class Andbtiles {
                                 insertMapItem(mapItem);
                                 break;
                             case Consts.CACHE_FULL:
-                                // set the min and max zoom if specified
-                                if (params[3] != null) {
-                                    tileJson.setMinzoom(Integer.valueOf(params[3]));
-                                    tileJson.setMaxzoom(Integer.valueOf(params[4]));
-                                    mapItem.setTileJsonString(gson.toJson(tileJson, TileJson.class));
+                                // set the bounding box if specified
+                                if (params[3] != null && params[3].contains(",")) {
+                                    List<Number> boundingBox = new ArrayList<>();
+                                    String[] splitCoordinates = params[3].split(",");
+                                    for (String coordinate : splitCoordinates)
+                                        boundingBox.add(Double.valueOf(coordinate));
+                                    tileJson.setBounds(boundingBox);
                                 }
+                                // set the min and max zoom if specified
+                                if (params[4] != null && Integer.valueOf(params[4]) != 0)
+                                    tileJson.setMinzoom(Integer.valueOf(params[4]));
+
+                                if (params[5] != null && Integer.valueOf(params[5]) != 0)
+                                    tileJson.setMaxzoom(Integer.valueOf(params[5]));
+
+                                mapItem.setTileJsonString(gson.toJson(tileJson, TileJson.class));
                                 // insert metadata
                                 mapItem.setPath(path);
                                 insertMetadata(mapItem);

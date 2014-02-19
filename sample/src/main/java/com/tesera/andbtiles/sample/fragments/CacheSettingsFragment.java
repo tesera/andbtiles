@@ -106,7 +106,7 @@ class CacheSettingsFragment extends Fragment {
                     case Const.CACHE_NO:
                     case Const.CACHE_ON_DEMAND:
                         andbtiles.addRemoteJsonTileProvider(mMapItem.getTileJsonString(), mMapItem.getId(),
-                                mMapItem.getCacheMode(), new AndbtilesCallback() {
+                                mMapItem.getCacheMode(), null, 0, 0, new AndbtilesCallback() {
                             @Override
                             public void onSuccess() {
                                 if (!isAdded())
