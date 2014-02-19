@@ -28,7 +28,7 @@ public class AndbtilesTests {
     @Test(expected = AndbtilesException.class)
     public void testWrongLocalProvider() throws AndbtilesException {
         Andbtiles andbtiles = new Andbtiles(Robolectric.getShadowApplication().getApplicationContext());
-        andbtiles.addLocalMbTilesProvider("wrong_path_to_sd");
+        andbtiles.addLocalMbTilesProvider("wrong_path_to_sd", "wrong_path_to_geo_json_file");
     }
 
     @Test(expected = AndbtilesException.class)
