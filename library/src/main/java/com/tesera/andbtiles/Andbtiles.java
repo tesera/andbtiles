@@ -133,7 +133,9 @@ public class Andbtiles {
         // handle tile request
         switch (mapItem.getCacheMode()) {
             case Consts.CACHE_NO:
-                return null;
+                TileJson tileJson = mGson.fromJson(mapItem.getTileJsonString(), TileJson.class);
+                byte[] tileData = getTileBytes(z, x, y, tileJson);
+                return tileData == null ? Consts.BLANK_TILE.getBytes() : tileData;
             case Consts.CACHE_ON_DEMAND:
                 // try to find the tile in the database
                 Cursor cursor = mRecentDatabases.get(mapId).query(TilesContract.TABLE_TILES, projection, selection, selectionArgs, null, null, null);
@@ -142,6 +144,7 @@ public class Andbtiles {
                 else {
                     // make final variables for accessing from worker scope
                     final TileJson tileJsonFinal = mGson.fromJson(mapItem.getTileJsonString(), TileJson.class);
+                    final byte[] tileDataFinal = getTileBytes(z, x, y, tileJsonFinal);
                     final int zFinal = z;
                     final int xFinal = x;
                     final int yFinal = y;
@@ -152,8 +155,6 @@ public class Andbtiles {
                             new Thread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    // fetch tile from the web
-                                    final byte[] tileDataFinal = getTileBytes(zFinal, xFinal, yFinal, tileJsonFinal);
                                     // save to database in worker thread
                                     // the operation can be quite lengthily because
                                     // we cannot make batch insert since the tiles are requested asynchronously
@@ -174,17 +175,18 @@ public class Andbtiles {
                                 }
                             }));
                     // return the cursor containing the tile_data
-                    return null;
+                    return tileDataFinal == null ? Consts.BLANK_TILE.getBytes() : tileDataFinal;
                 }
             case Consts.CACHE_FULL:
             case Consts.CACHE_DATA:
                 cursor = mRecentDatabases.get(mapId).query(TilesContract.TABLE_TILES, projection, selection, selectionArgs, null, null, null);
                 if (cursor.moveToFirst())
                     return cursor.getBlob(cursor.getColumnIndex(TilesContract.COLUMN_TILE_DATA));
+                else
+                    return Consts.BLANK_TILE.getBytes();
             default:
-                break;
+                return Consts.BLANK_TILE.getBytes();
         }
-        return null;
     }
 
     /**
