@@ -84,17 +84,15 @@ public class Andbtiles {
     /**
      * Returns a tile data as bytes array from the database uniquely identified by the mapID with specified zoom and coordinates
      * <p/>
-     * This method always returns immediately or throws an exception if something went wrong
-     * saved in the database or null if there is none.
+     * This method always returns immediately. It returns the tile bytes or an empty tile if the map provider or the tile doesn't exist.
      *
      * @param mapId unique database identifier
      * @param z     the zoom level
      * @param x     the x tile coordinate
      * @param y     the y tile coordinate
      * @return bytes array representing the requested tile
-     * @see com.tesera.andbtiles.exceptions.AndbtilesException
      */
-    public byte[] getTile(String mapId, int z, int x, int y) throws AndbtilesException {
+    public byte[] getTile(String mapId, int z, int x, int y) {
         MapItem mapItem;
         if (mRecentMaps.containsKey(mapId))
             mapItem = mRecentMaps.get(mapId);
@@ -104,15 +102,11 @@ public class Andbtiles {
             if (mapItem == null) {
                 // try a local file instead since
                 // the remote files have ids like <user>.<mapname>
-                // the remote files have ids like <mapname>.mbtiles
-                try {
-                    mapId = mapId.split("\\.")[1] + ".mbtiles";
-                } catch (Exception e) {
-                    throw new AndbtilesException("Map <" + mapId + "> with not found in maps.");
-                }
+                // the local files have ids like <user>.<mapname>.mbtiles
+                mapId = mapId + "." + Consts.EXTENSION_MBTILES;
                 mapItem = mMapsDatabase.findMapById(mapId);
                 if (mapItem == null)
-                    throw new AndbtilesException("Map <" + mapId + "> with not found in maps.");
+                    return Consts.BLANK_TILE.getBytes();
             }
             mMapsDatabase.close();
             mRecentMaps.put(mapId, mapItem);
@@ -471,7 +465,6 @@ public class Andbtiles {
                     if (cursor.moveToFirst()) {
                         int columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
                         if (DownloadManager.STATUS_SUCCESSFUL == cursor.getInt(columnIndex)) {
-
                             // find the file and save the map item to the database
                             String uriString = cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI));
                             File mbTilesFile;
@@ -490,25 +483,12 @@ public class Andbtiles {
                             mapItem.setName(mbTilesFile.getName());
                             mapItem.setCacheMode(Consts.CACHE_DATA);
                             mapItem.setSize(mbTilesFile.length());
-
-                            // insert the file in the database
-                            MapsDatabase mapsDatabase = new MapsDatabase(context);
-                            try {
-                                mapsDatabase.open();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                callback.onError(e);
-                                return;
-                            }
-                            mapsDatabase.insertItems(mapItem);
-                            mapsDatabase.close();
-
+                            insertMapItem(mapItem);
                             callback.onSuccess();
                         }
 
                     } else
-                        callback.onError(new AndbtilesException(
-                                String.format("Cannot download %s", urlToFile)));
+                        callback.onError(new AndbtilesException(String.format("Cannot download %s", urlToFile)));
                 }
                 // unregister the receiver since the download is done
                 context.unregisterReceiver(this);
@@ -624,7 +604,7 @@ public class Andbtiles {
                         mapItem.setPath(tileJson.getDownload());
                         mapItem.setSize(tileJson.getFilesize() == null ? 0 : tileJson.getFilesize().longValue());
                         mapItem.setTileJsonString(gson.toJson(tileJson, TileJson.class));
-                        mapItem.setGeoJsonString(parseGeoJsonString(tileJson.getData().get(0)));
+                        mapItem.setGeoJsonString(tileJson.getData() == null ? "" : parseGeoJsonString(tileJson.getData().get(0)));
 
                         // create a local path for database
                         String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
@@ -671,7 +651,7 @@ public class Andbtiles {
                                 if (mapItem.getPath() == null)
                                     return "Map doesn't have private data: " + params[1];
                                 downloadMbTilesFile(mContext, mapItem.getPath(), mCallback);
-                                break;
+                                return "";
                         }
                         return null;
                     }
@@ -711,7 +691,7 @@ public class Andbtiles {
         protected void onPostExecute(String error) {
             if (error == null)
                 mCallback.onSuccess();
-            else
+            else if (error.length() != 0)
                 mCallback.onError(new AndbtilesException(error));
             super.onPostExecute(error);
         }
