@@ -1,4 +1,3 @@
-
 package com.tesera.andbtiles.pojos;
 
 public class Feature {

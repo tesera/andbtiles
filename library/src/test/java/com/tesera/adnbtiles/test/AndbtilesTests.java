@@ -2,6 +2,7 @@ package com.tesera.andbtiles.test;
 
 import com.tesera.andbtiles.Andbtiles;
 import com.tesera.andbtiles.exceptions.AndbtilesException;
+import com.tesera.andbtiles.utils.Consts;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,9 +32,8 @@ public class AndbtilesTests {
         andbtiles.addLocalMbTilesProvider("wrong_path_to_sd", "wrong_path_to_geo_json_file");
     }
 
-    @Test(expected = AndbtilesException.class)
-    public void testWrongTile() throws AndbtilesException {
+    public void testEmptyTile() {
         Andbtiles andbtiles = new Andbtiles(Robolectric.getShadowApplication().getApplicationContext());
-        andbtiles.getTile("mapId", 0, 0, 0);
+        assertEquals(Consts.BLANK_TILE.getBytes(), andbtiles.getTile("mapId", 0, 0, 0));
     }
 }

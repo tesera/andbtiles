@@ -66,6 +66,7 @@ public class Andbtiles {
     private Gson mGson;
     private HashMap<String, MapItem> mRecentMaps;
     private HashMap<String, SQLiteDatabase> mRecentDatabases;
+    private boolean mDatabaseCreated;
 
     /**
      * Class constructor.
@@ -167,7 +168,8 @@ public class Andbtiles {
                                     values.put(TilesContract.COLUMN_TILE_ID, tile_id);
                                     insertMap(values, finalMapId);
                                 }
-                            }));
+                            })
+                    );
                     // return the cursor containing the tile_data
                     return tileDataFinal == null ? Consts.BLANK_TILE.getBytes() : tileDataFinal;
                 }
@@ -446,6 +448,17 @@ public class Andbtiles {
 
     // helper function for downloading a single mbtiles file from the internet
     private void downloadMbTilesFile(final Context context, final String urlToFile, final AndbtilesCallback callback) {
+        // delete previous database because conflicts occur
+        String path = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator
+                + Consts.FOLDER_ROOT + File.separator + FilenameUtils.getName(urlToFile);
+        File database = new File(path);
+        if (database.exists())
+            database.delete();
+
+        database = new File(path + "-journal");
+        if (database.exists())
+            database.delete();
+
         final DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
         // the request should follow the provided URL
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(urlToFile));
@@ -641,7 +654,10 @@ public class Andbtiles {
                                 mapItem.setTileJsonString(gson.toJson(tileJson, TileJson.class));
                                 // insert metadata
                                 mapItem.setPath(path);
-                                insertMetadata(mapItem);
+                                if (!mDatabaseCreated) {
+                                    insertMetadata(mapItem);
+                                    mDatabaseCreated = true;
+                                }
                                 // start harvesting
                                 Intent harvesterService = new Intent(mContext, HarvesterService.class);
                                 harvesterService.putExtra(Consts.EXTRA_JSON, new Gson().toJson(mapItem, MapItem.class));

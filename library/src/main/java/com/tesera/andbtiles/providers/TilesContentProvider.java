@@ -143,7 +143,8 @@ public class TilesContentProvider extends ContentProvider {
                                 values.put(TilesContract.COLUMN_TILE_ID, tile_id);
                                 insertMap(values);
                             }
-                        }));
+                        })
+                );
 
                 // return the cursor containing the tile_data
                 return getCursorWithTile(tileData);

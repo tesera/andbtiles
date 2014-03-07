@@ -1,4 +1,3 @@
-
 package com.tesera.andbtiles.pojos;
 
 import com.google.gson.annotations.SerializedName;

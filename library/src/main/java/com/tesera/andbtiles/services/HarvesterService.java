@@ -53,6 +53,7 @@ public class HarvesterService extends IntentService {
         // notify the user
         int maxProgress = calculateMaxProgress();
         NotificationManager mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotifyManager.cancelAll();
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setSmallIcon(android.R.drawable.stat_sys_download)
                 .setContentTitle("Harvesting tiles…")
@@ -110,7 +111,8 @@ public class HarvesterService extends IntentService {
                                     values.put(TilesContract.COLUMN_TILE_ID, tile_id);
                                     insertMap(values);
                                 }
-                            }));
+                            })
+                    );
 
                 }
         }
