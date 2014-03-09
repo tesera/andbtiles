@@ -322,7 +322,7 @@ public class Andbtiles {
      * @param callback         a callback for returning the background thread status
      * @see com.tesera.andbtiles.callbacks.AndbtilesCallback
      */
-    public void addRemoteMbilesProvider(String urlToMbTilesFile, AndbtilesCallback callback) {
+    public void addRemoteMbTilesProvider(String urlToMbTilesFile, AndbtilesCallback callback) {
         // do a URL and extension check
         if (!urlToMbTilesFile.matches(Patterns.WEB_URL.pattern()) || !urlToMbTilesFile.endsWith(Consts.EXTENSION_MBTILES))
             callback.onError(new AndbtilesException
@@ -457,6 +457,8 @@ public class Andbtiles {
         Intent downloadIntent = new Intent(mContext, DownloadService.class);
         downloadIntent.putExtra(Consts.EXTRA_JSON, urlToFile);
         mContext.startService(downloadIntent);
+
+        callback.onSuccess();
     }
 
     private byte[] getTileBytes(int z, int x, int y, TileJson tileJson) {

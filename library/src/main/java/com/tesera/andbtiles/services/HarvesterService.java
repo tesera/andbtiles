@@ -44,10 +44,8 @@ public class HarvesterService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         // get the tile json data
-        MapItem mapItem = new Gson().fromJson(intent.getStringExtra(Consts.EXTRA_JSON), MapItem.class);
+        final MapItem mapItem = new Gson().fromJson(intent.getStringExtra(Consts.EXTRA_JSON), MapItem.class);
         mTileJson = new Gson().fromJson(mapItem.getTileJsonString(), TileJson.class);
-
-        mDatabase = SQLiteDatabase.openOrCreateDatabase(mapItem.getPath(), null);
         ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
 
         // notify the user
@@ -93,6 +91,8 @@ public class HarvesterService extends IntentService {
                             new Thread(new Runnable() {
                                 @Override
                                 public void run() {
+                                    if (mDatabase == null)
+                                        mDatabase = SQLiteDatabase.openOrCreateDatabase(mapItem.getPath(), null);
                                     // save to database in worker thread
                                     // the operation can be quite lengthily because
                                     // we cannot make batch insert since the tiles are requested asynchronously
@@ -117,7 +117,8 @@ public class HarvesterService extends IntentService {
                 }
         }
 
-        mDatabase.close();
+        if (mDatabase != null)
+            mDatabase.close();
         // try to save it to database
         mapItem.setSize(new File(mapItem.getPath()).length());
         // insert the file in the database
@@ -136,6 +137,13 @@ public class HarvesterService extends IntentService {
 
         mNotifyManager.cancelAll();
         mNotifyManager.notify(0, builder.build());
+    }
+
+    @Override
+    public void onDestroy() {
+        if (mDatabase != null)
+            mDatabase.close();
+        super.onDestroy();
     }
 
     private int calculateMaxProgress() {
