@@ -1,16 +1,12 @@
 package com.tesera.andbtiles;
 
-import android.app.DownloadManager;
-import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.util.Patterns;
@@ -24,6 +20,7 @@ import com.tesera.andbtiles.exceptions.AndbtilesException;
 import com.tesera.andbtiles.pojos.GeoJson;
 import com.tesera.andbtiles.pojos.MapItem;
 import com.tesera.andbtiles.pojos.TileJson;
+import com.tesera.andbtiles.services.DownloadService;
 import com.tesera.andbtiles.services.HarvesterService;
 import com.tesera.andbtiles.utils.Consts;
 import com.tesera.andbtiles.utils.TilesContract;
@@ -46,8 +43,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -459,56 +454,9 @@ public class Andbtiles {
         if (database.exists())
             database.delete();
 
-        final DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-        // the request should follow the provided URL
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(urlToFile));
-        // the download destination should be on the external SD card inside the app folder
-        request.setDestinationInExternalPublicDir(Consts.FOLDER_ROOT, FilenameUtils.getName(urlToFile));
-        final long enqueue = downloadManager.enqueue(request);
-        // register a broadcast receiver to listen to download complete event
-        final BroadcastReceiver receiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                // check for download complete action
-                if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)) {
-                    DownloadManager.Query query = new DownloadManager.Query();
-                    query.setFilterById(enqueue);
-                    Cursor cursor = downloadManager.query(query);
-                    if (cursor.moveToFirst()) {
-                        int columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-                        if (DownloadManager.STATUS_SUCCESSFUL == cursor.getInt(columnIndex)) {
-                            // find the file and save the map item to the database
-                            String uriString = cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI));
-                            File mbTilesFile;
-                            try {
-                                mbTilesFile = new File(new URI(uriString).getPath());
-                            } catch (URISyntaxException e) {
-                                e.printStackTrace();
-                                callback.onError(e);
-                                return;
-                            }
-
-                            // create new map item
-                            MapItem mapItem = new MapItem();
-                            mapItem.setId(mbTilesFile.getName());
-                            mapItem.setPath(mbTilesFile.getAbsolutePath());
-                            mapItem.setName(mbTilesFile.getName());
-                            mapItem.setCacheMode(Consts.CACHE_DATA);
-                            mapItem.setSize(mbTilesFile.length());
-                            insertMapItem(mapItem);
-                            callback.onSuccess();
-                        }
-
-                    } else
-                        callback.onError(new AndbtilesException(String.format("Cannot download %s", urlToFile)));
-                }
-                // unregister the receiver since the download is done
-                context.unregisterReceiver(this);
-            }
-        };
-        // unregister the receiver once done
-        context.registerReceiver(receiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+        Intent downloadIntent = new Intent(mContext, DownloadService.class);
+        downloadIntent.putExtra(Consts.EXTRA_JSON, urlToFile);
+        mContext.startService(downloadIntent);
     }
 
     private byte[] getTileBytes(int z, int x, int y, TileJson tileJson) {
