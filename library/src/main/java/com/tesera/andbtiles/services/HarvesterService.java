@@ -46,7 +46,7 @@ public class HarvesterService extends IntentService {
         // get the tile json data
         final MapItem mapItem = new Gson().fromJson(intent.getStringExtra(Consts.EXTRA_JSON), MapItem.class);
         mTileJson = new Gson().fromJson(mapItem.getTileJsonString(), TileJson.class);
-        ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
+        ExecutorService mExecutorService = Executors.newCachedThreadPool();
 
         // notify the user
         int maxProgress = calculateMaxProgress();
