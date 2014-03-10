@@ -197,7 +197,7 @@ class InternetProviderFragment extends Fragment {
                 unselectFile();
                 // download the remote mbtiles file
                 Andbtiles andbtiles = new Andbtiles(getActivity());
-                andbtiles.addRemoteMbilesProvider(mDownloadPath, new AndbtilesCallback() {
+                andbtiles.addRemoteMbTilesProvider(mDownloadPath, new AndbtilesCallback() {
                     @Override
                     public void onSuccess() {
                         if (!isAdded())

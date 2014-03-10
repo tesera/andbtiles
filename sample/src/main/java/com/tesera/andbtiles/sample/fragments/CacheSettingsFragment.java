@@ -126,7 +126,7 @@ class CacheSettingsFragment extends Fragment {
                         });
                         break;
                     case Const.CACHE_DATA:
-                        andbtiles.addRemoteMbilesProvider(mMapItem.getPath(), new AndbtilesCallback() {
+                        andbtiles.addRemoteMbTilesProvider(mMapItem.getPath(), new AndbtilesCallback() {
                             @Override
                             public void onSuccess() {
                                 // long running operation
