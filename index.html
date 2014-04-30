@@ -124,7 +124,7 @@
 				
 					<!-- Title --> 
 				
-					<h3>Offline Tile Management for Android </h3>
+					<h3>Offline tile management for android</h3>
 					<a name="container"></a> 			
 					<!-- Content --> 
 					
@@ -132,7 +132,7 @@
 										
 					<div class="space"></div>
                     
-					<a  class="js-open-modal button-blue">blue button with Modal video</a> 
+					<a  class="js-open-modal button-blue">See video</a> 
                     
 					</div>
 				
@@ -173,7 +173,7 @@
 				
 					<!-- Title --> 
 				
-					<h3>Use it in an App of your own.</h3>
+					<h3>Use it in an app of your own</h3>
 								
 					<!-- Content --> 
 					
@@ -219,11 +219,11 @@
 				
 					<!-- Title --> 
 				
-					<h3>What our clients are doing with it.</h3>
+					<h3>How we uses it</h3>
 								
 					<!-- Content --> 
 					
-					<p>We developed andbtiles as offline mapping for Android was a recuring requirment without a great solution.  For Cenovus we use it in our tracker framework used for compiling an access network dataset automatically with the help of remote field based employees.  For Regional Municipality of Wood Buffalo we used it to manage dozens of complex maps that we designed within MapBox for an Android Application enabling them to tell a map based story</p>
+					<p><a href="http://tracker.cenovus.tesera.com/">Cenovus</a> leverages our tracker framework for compiling an access network dataset automatically with the help of remote field based employees. Regional Municipality of <a href="http://woodbuffalo.ab.ca">Wood Buffalo</a> used it for a flashy Mapbook App</p>
 										
 					<div class="space"></div>
 					
@@ -235,24 +235,19 @@
 				<div class="seven columns picture make-it-appear-left" >
 				
 <pre>
-		    	<!-- Article centered on the Page --> 
-		
-				<div class="twelve columns centered make-it-appear-top">
+Andbtiles andbtiles = new Andbtiles(getActivity());
+andbtiles.addRemoteJsonTileProvider(TILE_JSON_ENDPOINT, MAP_ID, 
+CACHE_MODE, new AndbtilesCallback() {
+    @Override
+    public void onSuccess() {
+        //TODO provider added successfully
+    }
 
-					<!-- Title --> 
-				
-					<h4>Finally! Simple and fair pricing.</h4>
-													
-					<!-- Content --> 
-				
-				
-					<div class="cost">
-						<p class="symbol">$</p>
-						<p class="value">0</p>
-					</div>
-					
-	
-				</div>
+    @Override
+    public void onError(Exception e) {
+        e.printStackTrace();
+    }
+});
 </pre>
 				
 				</div>
@@ -265,39 +260,6 @@
 <!-- END FOURTH SECTION ############################################### -->
 
 
-
-<!-- FIFTH SECTION ############################################### -->
-
-
-<section class="page5">
-
-		
-		    <div class="row">
-		    
-		    	<!-- Article centered on the Page --> 
-		
-				<div class="twelve columns centered make-it-appear-top">
-
-					<!-- Title --> 
-				
-					<h4>Finally! Simple and fair pricing.</h4>
-													
-					<!-- Content --> 
-				
-					<h1>€0</h1>
-				
-					
-	
-				</div>
-				
-		
-		    </div>
-			
-
-</section>
-
-
-<!-- END FIFTH SECTION ############################################### -->
 
 
 <!-- FOOTER SECTION ############################################### -->
